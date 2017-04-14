@@ -1,5 +1,5 @@
-## Travis CI
-### Notifications
+# Travis CI
+## Notifications
 Slack integration to GoCloud Labs team #travis:   [[https://docs.travis-ci.com/user/notifications/#Configuring-slack-notifications]]  
 
 Regenerate token by managing integrations: [[https://gocloud-labs.slack.com/apps/manage]]  
