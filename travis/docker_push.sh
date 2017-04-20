@@ -5,13 +5,6 @@ docker version
 
 BRANCH_REGEX="^(master$|release//*|^pr/.*)"
 
-if [[ $TRAVIS_BRANCH =~ $BRANCH_REGEX ]];
-  then
-    DOCKER_REPO=gcr.io/GCLOUD_PROJECT_ID/$GOCLOUD_PROJECT_NAME;
-  else
-    DOCKER_REPO=$(echo $TRAVIS_REPO_SLUG | tr '[:upper:]' '[:lower:]');
-fi
-
 echo "DOCKER_REPO: $DOCKER_REPO"
 echo "DOCKER_COMMIT_TAG: $DOCKER_COMMIT_TAG"
 echo "TRAVIS_EVENT_TYPE=$TRAVIS_EVENT_TYPE"
