@@ -3,8 +3,6 @@
 echo "docker_push.sh script start"
 docker version
 
-BRANCH_REGEX="^(master$|release//*|pr/.*)"
-
 echo "DOCKER_REPO: $DOCKER_REPO"
 echo "DOCKER_COMMIT_TAG: $DOCKER_COMMIT_TAG"
 echo "TRAVIS_EVENT_TYPE=$TRAVIS_EVENT_TYPE"
