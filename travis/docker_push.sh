@@ -4,7 +4,7 @@ echo "docker_push.sh script start"
 docker version
 
 if [[ $TRAVIS_BRANCH =~ $BRANCH_REGEX ]];
-then export DOCKER_REPO=gcr.io/GCLOUD_PROJECT_ID/$GOCLOUD_PROJECT_NAME;
+then export DOCKER_REPO=gcr.io/$GCLOUD_PROJECT_ID/$GOCLOUD_PROJECT_NAME;
 else export DOCKER_REPO=$(echo $TRAVIS_REPO_SLUG | tr '[:upper:]' '[:lower:]');
 fi
 
