@@ -23,7 +23,7 @@ var configFile, buildTag, event, branch, baseImage, pr *string
 
 func init() {
 	const (
-		defaultConfigFile = "cicd.yaml"
+		defaultConfigFile = "./cicd.yaml"
 		configFileUsage   = "configuration file containing project workflow values"
 		buildTagUsage     = "existing image tag used as basis for further tags (required)"
 		eventUsage        = "build event type from list: push, pull_request"
