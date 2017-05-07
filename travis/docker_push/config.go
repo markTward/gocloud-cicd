@@ -2,9 +2,7 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -103,27 +101,6 @@ func (r *GCRRegistry) IsRegistryValid() (err error) {
 		err = fmt.Errorf("url missing from %v configuration", r.Description)
 	}
 	return err
-}
-
-// TODO: obsolete now that gcloud auth output captured.  but would json parse of other fields be useful?
-func (r *GCRRegistry) getClientID() (email string, err error) {
-
-	// parse google credentials for identity
-	type clientSecret struct {
-		ClientEmail string `json:"client_email"`
-	}
-
-	// read in service account credentials file
-	var jsonInput []byte
-	if jsonInput, err = ioutil.ReadFile(r.KeyFile); err != nil {
-		return "", fmt.Errorf("get service account id: %v", err)
-	}
-
-	// parse json for client email
-	cs := clientSecret{}
-	err = json.Unmarshal([]byte(jsonInput), &cs)
-
-	return cs.ClientEmail, err
 }
 
 type DockerRegistry struct {
