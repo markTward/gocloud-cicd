@@ -32,20 +32,21 @@ echo commit tag: $COMMIT_TAG
 echo release name: $RELEASE_NAME
 echo dryrun: $DRYRUN_OPTION
 echo namespace: $NAMESPACE
-echo image: $DOCKER_REPO:COMMIT_TAG
+echo image: $DOCKER_REPO:$COMMIT_TAG
 
 # BUG: helm upgrade` does not re-create namespace if it's been deleted. https://github.com/kubernetes/helm/issues/2013
 # create namespace all cases ignoring error
 sudo kubectl get namespace $NAMESPACE || true
 
 # upstall helm release
+# BUG: helm converts all numeric commit tag to floating point! hacky workaround by forcing string from https://github.com/kubernetes/helm/issues/1707
 sudo helm upgrade \
 $DRYRUN_OPTION \
 --debug \
 --install $RELEASE_NAME \
 --namespace=$NAMESPACE \
 --set service.gocloudAPI.image.repository=$DOCKER_REPO \
---set service.gocloudAPI.image.tag=$COMMIT_TAG \
+--set service.gocloudAPI.image.tag=":$COMMIT_TAG" \
 --set service.gocloudGrpc.image.repository=$DOCKER_REPO \
---set service.gocloudGrpc.image.tag=$COMMIT_TAG \
+--set service.gocloudGrpc.image.tag=":$COMMIT_TAG" \
 $CHARTPATH
