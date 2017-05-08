@@ -1,0 +1,25 @@
+registry:
+  gcrregistry:
+    name: gcr
+    description: Google Container Registry
+    host: gcr.io
+    keyfile: ./client-secret.json
+  dockerregistry:
+    name: docker
+    description: Docker Hub
+    host: docker.io
+
+workflow:
+  enabled: true
+  github:
+    repo: https://github.com/markTward/gocloud-cicd.git
+    branch: master
+  ciprovider:
+    name: travis
+    plan: A
+  registry: gcr
+  cdprovider:
+    name: helm
+    release: gocloud
+    namespace: gocloud
+    chartDir: deploy/travis/gocloud
