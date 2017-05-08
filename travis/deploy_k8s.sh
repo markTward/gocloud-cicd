@@ -36,11 +36,11 @@ echo image: $DOCKER_REPO:$COMMIT_TAG
 
 # BUG: helm upgrade` does not re-create namespace if it's been deleted. https://github.com/kubernetes/helm/issues/2013
 # create namespace all cases ignoring error
-sudo kubectl get namespace $NAMESPACE || true
+kubectl get namespace $NAMESPACE || true
 
 # upstall helm release
 # BUG: helm converts all numeric commit tag to floating point! hacky workaround by forcing string from https://github.com/kubernetes/helm/issues/1707
-sudo helm upgrade \
+helm upgrade \
 $DRYRUN_OPTION \
 --debug \
 --install $RELEASE_NAME \
