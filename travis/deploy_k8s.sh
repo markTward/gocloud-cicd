@@ -7,10 +7,10 @@ echo "args: $@"
 
 # TODO: derive DOCKER_REPO from cicd.yaml if move to go-based script
 
-if [[ $# -ne 5 ]]
+if [[ $# -ne 6 ]]
 then
   echo "error: incorrect number of required positional args"
-  echo "usage: deploy_k8s.sh repository tag release-name dry-run namespace"
+  echo "usage: deploy_k8s.sh repository tag release-name dry-run namespace chartPath"
   exit 1
 fi
 
@@ -19,6 +19,7 @@ COMMIT_TAG=$2
 RELEASE_NAME=$3
 DRYRUN=$4
 NAMESPACE=$5
+CHARTPATH=$6
 
 if [ $DRYRUN == "DRYRUN" ];
   then
@@ -47,4 +48,4 @@ $DRYRUN_OPTION \
 --set service.gocloudAPI.image.tag=$COMMIT_TAG \
 --set service.gocloudGrpc.image.repository=$DOCKER_REPO \
 --set service.gocloudGrpc.image.tag=$COMMIT_TAG \
-helm/gocloud/
+$CHARTPATH
