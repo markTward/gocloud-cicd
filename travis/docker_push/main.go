@@ -11,12 +11,13 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/markTward/gocloud-cicd/travis/docker_push/config"
 	yaml "gopkg.in/yaml.v2"
 )
 
 type Config struct {
-	Workflow
-	Registry
+	config.Workflow
+	config.Registry
 }
 
 var configFile, buildTag, event, branch, baseImage, pr *string
@@ -141,7 +142,6 @@ func main() {
 	// point to active registry (docker, gcr, ...)
 	var activeRegistry interface{}
 
-	// TODO: return tag() to receiver and eliminate need to capture url
 	switch cfg.Workflow.Registry {
 	case "gcr":
 		activeRegistry = &cfg.Registry.GCRRegistry
@@ -152,7 +152,7 @@ func main() {
 	}
 
 	// assert activeRegistry as type Registrator to access methods
-	ar := activeRegistry.(Registrator)
+	ar := activeRegistry.(config.Registrator)
 
 	// validate registry has required values
 	if err = ar.IsRegistryValid(); err != nil {

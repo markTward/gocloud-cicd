@@ -3,3 +3,6 @@
 *.gz
 *.zip
 *.gzip
+
+# gocloud project
+client-secret.json
