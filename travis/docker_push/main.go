@@ -47,7 +47,6 @@ func makeTagList(repoURL string, refImage string, event string, branch string, p
 	// tag additional images based on build event type
 	tagSep := strings.Index(refImage, ":")
 	commitImage := repoURL + refImage[tagSep:]
-	log.Println("commit image:", commitImage)
 
 	images = append(images, commitImage)
 
@@ -61,7 +60,6 @@ func makeTagList(repoURL string, refImage string, event string, branch string, p
 		images = append(images, repoURL+":PR-"+pr)
 	}
 
-	log.Println("tagged images:", images)
 	return images, err
 }
 
@@ -174,6 +172,7 @@ func main() {
 	if err = tagImages(*baseImage, images); err != nil {
 		exitScript(err, true)
 	}
+	log.Println("tagged images:", images)
 
 	// push images
 	var result []string
