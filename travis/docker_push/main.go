@@ -5,20 +5,13 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"strings"
 
 	"github.com/markTward/gocloud-cicd/travis/docker_push/config"
-	yaml "gopkg.in/yaml.v2"
 )
-
-type Config struct {
-	config.Workflow
-	config.Registry
-}
 
 var configFile, buildTag, event, branch, baseImage, pr *string
 
@@ -124,16 +117,9 @@ func main() {
 		exitScript(err, true)
 	}
 
-	// read in project config file
-	yamlInput, err := ioutil.ReadFile(*configFile)
-	if err != nil {
-		exitScript(err, true)
-	}
-
-	// parse yaml into Config object
-	cfg := Config{}
-	err = yaml.Unmarshal([]byte(yamlInput), &cfg)
-	if err != nil {
+	// initialize configuration object
+	cfg := config.New()
+	if err := config.Load(*configFile, &cfg); err != nil {
 		exitScript(err, true)
 	}
 
@@ -153,23 +139,24 @@ func main() {
 	ar := activeRegistry.(config.Registrator)
 
 	// validate registry has required values
-	if err = ar.IsRegistryValid(); err != nil {
+	if err := ar.IsRegistryValid(); err != nil {
 		exitScript(err, true)
 	}
 
 	// authenticate credentials for registry
-	if err = ar.Authenticate(); err != nil {
+	if err := ar.Authenticate(); err != nil {
 		exitScript(err, true)
 	}
 
 	// make list of images to tag
 	var images []string
+	var err error
 	if images, err = makeTagList(ar.GetRepoURL(), *baseImage, *event, *branch, *pr); err != nil {
 		exitScript(err, true)
 	}
 
 	// tag images
-	if err = tagImages(*baseImage, images); err != nil {
+	if err := tagImages(*baseImage, images); err != nil {
 		exitScript(err, true)
 	}
 	log.Println("tagged images:", images)
