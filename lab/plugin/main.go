@@ -106,30 +106,30 @@ func makeInstance(name string) interface{} {
 }
 
 func main() {
-	// 	gdata := `
-	// registry:
-	//   name: gcr
-	//   properties:
-	//     description: Google Container Registry
-	//     host: gcr.io
-	//     project: k8sdemo-159622
-	//     repo: gocloud
-	//     url: gcr.io/k8sdemo-159622/gocloud
-	//     keyfile: ./client-secret.json
-	// `
-	ddata := `
+	gdata := `
 registry:
-  name: docker
+  name: gcr
   properties:
-    description: Docker Hub
-    host: docker.io
-    account: marktward
+    description: Google Container Registry
+    host: gcr.io
+    project: k8sdemo-159622
     repo: gocloud
-    url: docker.io/marktward/gocloud
+    url: gcr.io/k8sdemo-159622/gocloud
+    keyfile: ./client-secret.json
 `
+	// ddata := `
+	// registry:
+	//   name: docker
+	//   properties:
+	//     description: Docker Hub
+	//     host: docker.io
+	//     account: marktward
+	//     repo: gocloud
+	//     url: docker.io/marktward/gocloud
+	// `
 	fmt.Printf("Type Registry: %#v\n\n", typeRegistry)
 
-	data := ddata
+	data := gdata
 	cfg := Config{}
 	if err := LoadConfig(data, &cfg); err != nil {
 		fmt.Println("error:", err)
@@ -139,11 +139,13 @@ registry:
 	var activeRegistry interface{}
 	switch cfg.Registry.Name {
 	case "gcr":
-		x := makeInstance("gcr").(GCRRegistry)
-		activeRegistry = &x
+		// x := makeInstance("gcr").(GCRRegistry)
+		// activeRegistry = &x
+		activeRegistry = makeInstance("gcr").(GCRRegistry)
 	case "docker":
-		x := makeInstance("docker").(DockerRegistry)
-		activeRegistry = &x
+		// x := makeInstance("docker").(DockerRegistry)
+		// activeRegistry = &x
+		activeRegistry = makeInstance("docker").(DockerRegistry)
 	default:
 		fmt.Println("unknown registry")
 	}
