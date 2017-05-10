@@ -139,13 +139,11 @@ registry:
 	var activeRegistry interface{}
 	switch cfg.Registry.Name {
 	case "gcr":
-		// x := makeInstance("gcr").(GCRRegistry)
-		// activeRegistry = &x
-		activeRegistry = makeInstance("gcr").(GCRRegistry)
+		newReg := makeInstance("gcr").(GCRRegistry)
+		activeRegistry = &newReg
 	case "docker":
-		// x := makeInstance("docker").(DockerRegistry)
-		// activeRegistry = &x
-		activeRegistry = makeInstance("docker").(DockerRegistry)
+		newReg := makeInstance("docker").(DockerRegistry)
+		activeRegistry = &newReg
 	default:
 		fmt.Println("unknown registry")
 	}
