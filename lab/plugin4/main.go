@@ -14,56 +14,46 @@ type Config struct {
 }
 
 type Registrator interface {
-	// ListProperties()
 	Copy(Registry)
 }
 
-type GCR struct {
+type GCRegistry struct {
 	Name        string
 	Description string
 	Host        string
 	Project     string
 	Repo        string
 	Url         string
-	KeyFile     string
+	Keyfile     string
 }
 
-// func (r *GCR) Copy(src Registry) {
-//
-// 	// r = reflect.New(reflect.TypeOf(GCR{})).Elem().Interface().(GCR)
-// 	// r.Name = src[name]
-//
-// 	s := reflect.ValueOf(r).Elem()
-// 	typeOfT := s.Type()
-//
-// 	for i := 0; i < s.NumField(); i++ {
-// 		n := typeOfT.Field(i).Name
-// 		v := src[n]
-// 		reflect.ValueOf(r).Elem().FieldByName(n).SetString(v)
-// 		// fmt.Printf("field name: %d %v :: %v\n", i, n, v)
-// 	}
-//
-// }
-
-func (gcr *GCR) Copy(r Registry) {
-
+func (gcr *GCRegistry) Copy(r Registry) {
 	gcrType := reflect.ValueOf(gcr).Elem().Type()
 	for i := 0; i < gcrType.NumField(); i++ {
 		n := gcrType.Field(i).Name
 		reflect.ValueOf(gcr).Elem().FieldByName(n).SetString(r[n])
-		// fmt.Printf("GCR1 field name: %d: %#v == %v\n", i, n, v)
 	}
 }
 
-var typeRegistry = make(map[string]reflect.Type)
+var providerRegistry = make(map[string]reflect.Type)
 
 func init() {
-	typeRegistry["gcr"] = reflect.TypeOf(GCR{})
-	// typeRegistry["docker"] = reflect.TypeOf(DockerRegistry{})
+	providerRegistry["gcr"] = reflect.TypeOf(GCRegistry{})
+}
+
+func makeInstance(name string) interface{} {
+	v := reflect.New(providerRegistry[name]).Elem()
+	return v.Interface()
+}
+
+func LoadConfig(data string, cfg *Config) error {
+	err := yaml.Unmarshal([]byte(data), &cfg)
+	return err
 }
 
 var data = `
 registry:
+  # element keys must match case of fields in destination struct.  ex: GCR{Name: string, ...}
   Name: gcr
   Description: Google Container Registry
   Host: gcr.io
@@ -84,62 +74,16 @@ func main() {
 	var activeRegistry interface{}
 	switch cfg.Registry["Name"] {
 	case "gcr":
-		newReg := makeInstance("gcr").(GCR)
+		newReg := makeInstance("gcr").(GCRegistry)
 		activeRegistry = &newReg
-	// case "docker":
-	//   newReg := makeInstance("docker").(DockerRegistry)
-	//   activeRegistry = &newReg
 	default:
 		fmt.Println("unknown registry")
 	}
-	fmt.Printf("Active Registry: %#v %T\n\n", activeRegistry, activeRegistry)
+	fmt.Printf("Active Registry: %#v\n\n", activeRegistry)
 
 	ar := activeRegistry.(Registrator)
-	fmt.Printf("AR asserted: %#v %T\n\n", ar, ar)
 
 	ar.Copy(cfg.Registry)
 	fmt.Printf("Active Registry after COPY: %#v\n\n", activeRegistry)
 
-}
-
-func LoadConfig(data string, cfg *Config) error {
-	err := yaml.Unmarshal([]byte(data), &cfg)
-	return err
-}
-
-func makeInstance(name string) interface{} {
-	v := reflect.New(typeRegistry[name]).Elem()
-	// Maybe fill in fields here if necessary
-	return v.Interface()
-}
-
-func attributes(m interface{}) (map[string]reflect.Type, map[string]string) {
-	// create an attribute data structure as a map of types keyed by a string.
-	attrs := make(map[string]reflect.Type)
-	attrsmap := make(map[string]string)
-
-	typ := reflect.TypeOf(m)
-
-	// if a pointer to a struct is passed, get the type of the dereferenced object
-	if typ.Kind() == reflect.Ptr {
-		typ = typ.Elem()
-	}
-	// Only structs are supported so return an empty result if the passed object is not a struct
-	if typ.Kind() != reflect.Struct {
-		fmt.Printf("%v type can't have attributes inspected\n", typ.Kind())
-		return attrs, attrsmap
-	}
-	// loop through the struct's fields and set the map
-	v := reflect.ValueOf(m).Elem()
-
-	for i := 0; i < typ.NumField(); i++ {
-		p := typ.Field(i)
-		if !p.Anonymous {
-			attrs[p.Name] = p.Type
-			attrsmap[p.Name] = v.Field(i).Interface().(string)
-		}
-	}
-
-	// fmt.Println(attrmap)
-	return attrs, attrsmap
 }
