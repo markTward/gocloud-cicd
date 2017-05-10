@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"reflect"
 	"strings"
 )
 
@@ -16,6 +17,14 @@ type DockerRegistry struct {
 	Account     string
 	Repo        string
 	Url         string
+}
+
+func (r *DockerRegistry) Copy(data Registry) {
+	t := reflect.ValueOf(r).Elem().Type()
+	for i := 0; i < t.NumField(); i++ {
+		n := t.Field(i).Name
+		reflect.ValueOf(r).Elem().FieldByName(n).SetString(data[n])
+	}
 }
 
 func (r *DockerRegistry) Authenticate() (err error) {

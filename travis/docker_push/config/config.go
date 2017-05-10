@@ -3,6 +3,7 @@ package config
 import (
 	"io/ioutil"
 	"log"
+	"reflect"
 	"strings"
 
 	yaml "gopkg.in/yaml.v2"
@@ -22,10 +23,7 @@ type Github struct {
 	Repo string
 }
 
-type Registry struct {
-	GCRRegistry
-	DockerRegistry
-}
+type Registry map[string]string
 
 type Workflow struct {
 	Enabled bool
@@ -56,6 +54,19 @@ type Registrator interface {
 	Push([]string) ([]string, error)
 	Authenticate() error
 	GetRepoURL() string
+	Copy(Registry)
+}
+
+var providerRegistry = make(map[string]reflect.Type)
+
+func init() {
+	providerRegistry["gcr"] = reflect.TypeOf(GCRRegistry{})
+	providerRegistry["docker"] = reflect.TypeOf(DockerRegistry{})
+}
+
+func MakeInstance(name string) interface{} {
+	v := reflect.New(providerRegistry[name]).Elem()
+	return v.Interface()
 }
 
 func New() Config {

@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -125,18 +124,22 @@ func main() {
 
 	// point to active registry (docker, gcr, ...)
 	var activeRegistry interface{}
-
-	switch cfg.Workflow.Registry {
+	switch cfg.Registry["Name"] {
 	case "gcr":
-		activeRegistry = &cfg.Registry.GCRRegistry
+		newReg := config.MakeInstance("gcr").(config.GCRRegistry)
+		activeRegistry = &newReg
 	case "docker":
-		activeRegistry = &cfg.Registry.DockerRegistry
+		newReg := config.MakeInstance("docker").(config.DockerRegistry)
+		activeRegistry = &newReg
 	default:
-		exitScript(errors.New(fmt.Sprintf("unsupported registry: %v\n", cfg.Workflow.Registry)), true)
+		fmt.Println("unknown registry")
 	}
 
 	// assert activeRegistry as type Registrator to access methods
 	ar := activeRegistry.(config.Registrator)
+
+	// Copy/Map values of unstructured registry data into provider struct
+	ar.Copy(cfg.Registry)
 
 	// validate registry has required values
 	if err := ar.IsRegistryValid(); err != nil {

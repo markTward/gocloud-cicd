@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"reflect"
 	"strings"
 )
 
@@ -16,7 +17,15 @@ type GCRRegistry struct {
 	Project     string
 	Repo        string
 	Url         string
-	KeyFile     string
+	Keyfile     string
+}
+
+func (r *GCRRegistry) Copy(data Registry) {
+	t := reflect.ValueOf(r).Elem().Type()
+	for i := 0; i < t.NumField(); i++ {
+		n := t.Field(i).Name
+		reflect.ValueOf(r).Elem().FieldByName(n).SetString(data[n])
+	}
 }
 
 func (r *GCRRegistry) GetRepoURL() (repoURL string) {
@@ -28,12 +37,12 @@ func (r *GCRRegistry) GetRepoURL() (repoURL string) {
 func (r *GCRRegistry) Authenticate() (err error) {
 	var stderr bytes.Buffer
 
-	if _, err = os.Stat(r.KeyFile); os.IsNotExist(err) {
+	if _, err = os.Stat(r.Keyfile); os.IsNotExist(err) {
 		err = fmt.Errorf("gcloud authentication: %v", err)
 		return err
 	}
 
-	cmd := exec.Command("gcloud", "auth", "activate-service-account", "--key-file", r.KeyFile)
+	cmd := exec.Command("gcloud", "auth", "activate-service-account", "--key-file", r.Keyfile)
 	cmd.Stderr = &stderr
 
 	log.Println(strings.Join(cmd.Args, " "))
