@@ -3,7 +3,6 @@ package config
 import (
 	"io/ioutil"
 	"log"
-	"reflect"
 	"strings"
 
 	yaml "gopkg.in/yaml.v2"
@@ -57,18 +56,6 @@ type Registrator interface {
 	Push([]string) ([]string, error)
 	Authenticate() error
 	GetRepoURL() string
-}
-
-var providerRegistry = make(map[string]reflect.Type)
-
-func init() {
-	providerRegistry["gcr"] = reflect.TypeOf(GCRRegistry{})
-	providerRegistry["docker"] = reflect.TypeOf(DockerRegistry{})
-}
-
-func MakeInstance(name string) interface{} {
-	v := reflect.New(providerRegistry[name]).Elem()
-	return v.Interface()
 }
 
 func New() Config {
