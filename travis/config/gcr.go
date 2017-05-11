@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"reflect"
 	"strings"
 )
 
@@ -18,14 +17,6 @@ type GCRRegistry struct {
 	Repo        string
 	Url         string
 	Keyfile     string
-}
-
-func (r *GCRRegistry) Copy(data Registry) {
-	t := reflect.ValueOf(r).Elem().Type()
-	for i := 0; i < t.NumField(); i++ {
-		n := t.Field(i).Name
-		reflect.ValueOf(r).Elem().FieldByName(n).SetString(data[n])
-	}
 }
 
 func (r *GCRRegistry) GetRepoURL() (repoURL string) {

@@ -23,7 +23,10 @@ type Github struct {
 	Repo string
 }
 
-type Registry map[string]string
+type Registry struct {
+	GCRRegistry
+	DockerRegistry
+}
 
 type Workflow struct {
 	Enabled bool
@@ -54,7 +57,6 @@ type Registrator interface {
 	Push([]string) ([]string, error)
 	Authenticate() error
 	GetRepoURL() string
-	Copy(Registry)
 }
 
 var providerRegistry = make(map[string]reflect.Type)

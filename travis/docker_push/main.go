@@ -9,7 +9,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/markTward/gocloud-cicd/travis/docker_push/config"
+	"github.com/markTward/gocloud-cicd/travis/config"
 )
 
 var configFile, buildTag, event, branch, baseImage, pr *string
@@ -124,22 +124,17 @@ func main() {
 
 	// point to active registry (docker, gcr, ...)
 	var activeRegistry interface{}
-	switch cfg.Registry["Name"] {
+	switch cfg.Workflow.Registry {
 	case "gcr":
-		newReg := config.MakeInstance("gcr").(config.GCRRegistry)
-		activeRegistry = &newReg
+		activeRegistry = &cfg.Registry.GCRRegistry
 	case "docker":
-		newReg := config.MakeInstance("docker").(config.DockerRegistry)
-		activeRegistry = &newReg
+		activeRegistry = &cfg.Registry.DockerRegistry
 	default:
 		fmt.Println("unknown registry")
 	}
 
 	// assert activeRegistry as type Registrator to access methods
 	ar := activeRegistry.(config.Registrator)
-
-	// Copy/Map values of unstructured registry data into provider struct
-	ar.Copy(cfg.Registry)
 
 	// validate registry has required values
 	if err := ar.IsRegistryValid(); err != nil {
