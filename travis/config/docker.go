@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-type DockerRegistry struct {
+type Docker struct {
 	Name        string
 	Description string
 	Host        string
@@ -18,7 +18,7 @@ type DockerRegistry struct {
 	Url         string
 }
 
-func (r *DockerRegistry) Authenticate() (err error) {
+func (r *Docker) Authenticate() (err error) {
 	var stderr bytes.Buffer
 	var cmdOut []byte
 
@@ -48,14 +48,14 @@ func (r *DockerRegistry) Authenticate() (err error) {
 	return err
 }
 
-func (r *DockerRegistry) IsRegistryValid() (err error) {
+func (r *Docker) IsRegistryValid() (err error) {
 	if r.Url == "" {
 		err = fmt.Errorf("url missing from %v configuration", r.Description)
 	}
 	return err
 }
 
-func (docker *DockerRegistry) Push(images []string) (pushed []string, err error) {
+func (docker *Docker) Push(images []string) (pushed []string, err error) {
 	var stderr bytes.Buffer
 	var cmdOut []byte
 
@@ -78,7 +78,7 @@ func (docker *DockerRegistry) Push(images []string) (pushed []string, err error)
 	return pushed, err
 }
 
-func (r *DockerRegistry) GetRepoURL() (repoURL string) {
+func (r *Docker) GetRepoURL() (repoURL string) {
 	repo := []string{r.Host, r.Account, r.Repo}
 	repoURL = strings.Join(repo, "/")
 	return repoURL

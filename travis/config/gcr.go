@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-type GCRRegistry struct {
+type GCR struct {
 	Name        string
 	Description string
 	Host        string
@@ -19,13 +19,13 @@ type GCRRegistry struct {
 	Keyfile     string
 }
 
-func (r *GCRRegistry) GetRepoURL() (repoURL string) {
+func (r *GCR) GetRepoURL() (repoURL string) {
 	repo := []string{r.Host, r.Project, r.Repo}
 	repoURL = strings.Join(repo, "/")
 	return repoURL
 }
 
-func (r *GCRRegistry) Authenticate() (err error) {
+func (r *GCR) Authenticate() (err error) {
 	var stderr bytes.Buffer
 
 	if _, err = os.Stat(r.Keyfile); os.IsNotExist(err) {
@@ -51,7 +51,7 @@ func (r *GCRRegistry) Authenticate() (err error) {
 
 }
 
-func (gcr *GCRRegistry) Push(images []string) (pushed []string, err error) {
+func (gcr *GCR) Push(images []string) (pushed []string, err error) {
 	var stderr bytes.Buffer
 	var cmdOut []byte
 	// IDEA: could use single command to push all repo images: gcloud docker -- push gcr.io/k8sdemo-159622/gocloud
@@ -77,7 +77,7 @@ func (gcr *GCRRegistry) Push(images []string) (pushed []string, err error) {
 	return pushed, err
 }
 
-func (r *GCRRegistry) IsRegistryValid() (err error) {
+func (r *GCR) IsRegistryValid() (err error) {
 	if r.Url == "" {
 		err = fmt.Errorf("url missing from %v configuration", r.Description)
 	}
