@@ -2,22 +2,15 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"strings"
 
-	yaml "gopkg.in/yaml.v2"
+	"github.com/markTward/gocloud-cicd/travis/config"
 )
-
-type Config struct {
-	Workflow
-	Registry
-}
 
 var configFile, buildTag, event, branch, baseImage, pr *string
 
@@ -46,7 +39,6 @@ func makeTagList(repoURL string, refImage string, event string, branch string, p
 	// tag additional images based on build event type
 	tagSep := strings.Index(refImage, ":")
 	commitImage := repoURL + refImage[tagSep:]
-	log.Println("commit image:", commitImage)
 
 	images = append(images, commitImage)
 
@@ -60,7 +52,6 @@ func makeTagList(repoURL string, refImage string, event string, branch string, p
 		images = append(images, repoURL+":PR-"+pr)
 	}
 
-	log.Println("tagged images:", images)
 	return images, err
 }
 
@@ -125,55 +116,48 @@ func main() {
 		exitScript(err, true)
 	}
 
-	// read in project config file
-	yamlInput, err := ioutil.ReadFile(*configFile)
-	if err != nil {
-		exitScript(err, true)
-	}
-
-	// parse yaml into Config object
-	cfg := Config{}
-	err = yaml.Unmarshal([]byte(yamlInput), &cfg)
-	if err != nil {
+	// initialize configuration object
+	cfg := config.New()
+	if err := config.Load(*configFile, &cfg); err != nil {
 		exitScript(err, true)
 	}
 
 	// point to active registry (docker, gcr, ...)
 	var activeRegistry interface{}
-
-	// TODO: return tag() to receiver and eliminate need to capture url
 	switch cfg.Workflow.Registry {
 	case "gcr":
 		activeRegistry = &cfg.Registry.GCRRegistry
 	case "docker":
 		activeRegistry = &cfg.Registry.DockerRegistry
 	default:
-		exitScript(errors.New(fmt.Sprintf("unsupported registry: %v\n", cfg.Workflow.Registry)), true)
+		fmt.Println("unknown registry")
 	}
 
 	// assert activeRegistry as type Registrator to access methods
-	ar := activeRegistry.(Registrator)
+	ar := activeRegistry.(config.Registrator)
 
 	// validate registry has required values
-	if err = ar.IsRegistryValid(); err != nil {
+	if err := ar.IsRegistryValid(); err != nil {
 		exitScript(err, true)
 	}
 
 	// authenticate credentials for registry
-	if err = ar.Authenticate(); err != nil {
+	if err := ar.Authenticate(); err != nil {
 		exitScript(err, true)
 	}
 
 	// make list of images to tag
 	var images []string
+	var err error
 	if images, err = makeTagList(ar.GetRepoURL(), *baseImage, *event, *branch, *pr); err != nil {
 		exitScript(err, true)
 	}
 
 	// tag images
-	if err = tagImages(*baseImage, images); err != nil {
+	if err := tagImages(*baseImage, images); err != nil {
 		exitScript(err, true)
 	}
+	log.Println("tagged images:", images)
 
 	// push images
 	var result []string
