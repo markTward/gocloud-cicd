@@ -18,6 +18,7 @@ type Config struct {
 type App struct {
 	Name string
 }
+
 type Github struct {
 	Repo string
 }
