@@ -126,9 +126,9 @@ func main() {
 	var activeRegistry interface{}
 	switch cfg.Workflow.Registry {
 	case "gcr":
-		activeRegistry = &cfg.Registry.GCRRegistry
+		activeRegistry = &cfg.Registry.GCR
 	case "docker":
-		activeRegistry = &cfg.Registry.DockerRegistry
+		activeRegistry = &cfg.Registry.Docker
 	default:
 		fmt.Println("unknown registry")
 	}

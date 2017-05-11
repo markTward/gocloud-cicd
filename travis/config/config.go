@@ -23,8 +23,8 @@ type Github struct {
 }
 
 type Registry struct {
-	GCRRegistry
-	DockerRegistry
+	GCR
+	Docker
 }
 
 type Workflow struct {

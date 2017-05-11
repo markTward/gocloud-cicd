@@ -25,11 +25,11 @@ type Github struct {
 }
 
 type Registry struct {
-	GCRRegistry
-	DockerRegistry
+	GCR
+	Docker
 }
 
-type GCRRegistry struct {
+type GCR struct {
 	Name        string
 	Description string
 	Host        string
@@ -39,7 +39,7 @@ type GCRRegistry struct {
 	KeyFile     string
 }
 
-type DockerRegistry struct {
+type Docker struct {
 	Name        string
 	Description string
 	Host        string
