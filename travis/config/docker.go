@@ -79,7 +79,5 @@ func (docker *Docker) Push(images []string) (pushed []string, err error) {
 }
 
 func (r *Docker) GetRepoURL() (repoURL string) {
-	repo := []string{r.Host, r.Account, r.Repo}
-	repoURL = strings.Join(repo, "/")
-	return repoURL
+	return r.Url
 }

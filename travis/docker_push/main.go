@@ -130,7 +130,8 @@ func main() {
 	case "docker":
 		activeRegistry = &cfg.Registry.Docker
 	default:
-		fmt.Println("unknown registry")
+		log.Printf("unknown workflow registry: <%v>", cfg.Workflow.Registry)
+		exitScript(fmt.Errorf("unknown workflow registry: <%v>", cfg.Workflow.Registry), true)
 	}
 
 	// assert activeRegistry as type Registrator to access methods

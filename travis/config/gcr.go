@@ -20,9 +20,7 @@ type GCR struct {
 }
 
 func (r *GCR) GetRepoURL() (repoURL string) {
-	repo := []string{r.Host, r.Project, r.Repo}
-	repoURL = strings.Join(repo, "/")
-	return repoURL
+	return r.Url
 }
 
 func (r *GCR) Authenticate() (err error) {

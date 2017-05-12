@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"reflect"
 	"strings"
 
 	"github.com/markTward/gocloud-cicd/travis/config"
@@ -59,16 +58,14 @@ func main() {
 	case "docker":
 		activeRegistry = &cfg.Registry.Docker
 	default:
-		fmt.Println("unknown registry")
+		log.Println("unknown registry")
+		exitScript(fmt.Errorf("unknown workflow registry: <%v>", cfg.Workflow.Registry), true)
 	}
 
-	// assert activeRegistry as type Registrator to access methods
+	// assert activeRegistry as type Deployer to access methods
 	ar := activeRegistry.(config.Deployer)
 
-	t := reflect.ValueOf(ar).Elem()
-	fmt.Printf("ar reflect: %#v\n", t)
-
-	if err := validateCLInput(&cfg, &ar); err != nil {
+	if err := validateCLInput(&cfg, ar); err != nil {
 		exitScript(err, true)
 	}
 
@@ -80,11 +77,11 @@ func main() {
 	fmt.Println("release:", release)
 	fmt.Println("namespace:", *namespace)
 	fmt.Println("chartpath:", *chartPath)
-	fmt.Println("repo url:")
+	fmt.Println("repo url:", ar.GetRepoURL())
 
 }
 
-func validateCLInput(cfg *config.Config, ar *config.Deployer) (err error) {
+func validateCLInput(cfg *config.Config, ar config.Deployer) (err error) {
 
 	if *buildTag == "" {
 		err = fmt.Errorf("%v\n", "build tag a required value; use --tag option")
@@ -115,6 +112,15 @@ func validateCLInput(cfg *config.Config, ar *config.Deployer) (err error) {
 			err = fmt.Errorf("%v\n", "service name required when not defined in cicd.yaml")
 		} else {
 			*serviceName = svc
+		}
+	}
+
+	if *containerRepo == "" {
+		log.Println("cicd workfloe repo:", ar.GetRepoURL())
+		if cr := ar.GetRepoURL(); cr == "" {
+			err = fmt.Errorf("%v\n", "repoitory url required when not defined in cicd.yaml")
+		} else {
+			*containerRepo = cr
 		}
 	}
 
