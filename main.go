@@ -16,7 +16,9 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "CICD Tools"
 	app.Usage = "Continuous Intergration and Deployment Tools"
-	app.Commands = commands.Commands
+	app.Commands = []cli.Command{
+		commands.PushCmd,
+	}
 
 	// global flags
 	app.Flags = []cli.Flag{
