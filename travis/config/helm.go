@@ -32,7 +32,7 @@ func (h *Helm) Deploy(args []string) (err error) {
 	var cmdOut []byte
 
 	//TODO: add args to command
-	cmd := exec.Command("helm", "help")
+	cmd := exec.Command("helm", "list")
 	cmd.Stderr = &stderr
 	log.Println(strings.Join(cmd.Args, " "))
 
