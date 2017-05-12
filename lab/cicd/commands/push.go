@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"log"
-	"os"
 	"os/exec"
 	"strings"
 
@@ -55,87 +54,92 @@ func tagImages(src string, targets []string) (err error) {
 func validateCLInput() (err error) {
 
 	if baseImage == "" {
-		err = fmt.Errorf("%v\n", "build image a required value; use --image option")
+		err = fmt.Errorf("%v", "build image a required value; use --image option")
 	}
 
 	if buildTag == "" {
-		err = fmt.Errorf("%v\n", "build tag a required value; use --tag option")
+		err = fmt.Errorf("%v", "build tag a required value; use --tag option")
 	}
 
 	if branch == "" {
-		err = fmt.Errorf("%v\n", "build branch a required value; use --branch option")
+		err = fmt.Errorf("%v", "build branch a required value; use --branch option")
 	}
 
 	switch event {
 	case "push", "pull_request":
 	default:
-		err = fmt.Errorf("%v\n", "event type must be one of: push, pull_request")
+		err = fmt.Errorf("%v", "event type must be one of: push, pull_request")
 	}
 
 	if event == "pull_request" && pr == "" {
-		err = fmt.Errorf("%v\n", "event type pull_request requires a PR number; use --pr option")
+		err = fmt.Errorf("%v", "event type pull_request requires a PR number; use --pr option")
 	}
 	return err
 }
 
-func exitScript(err error, exit bool) {
+func logError(err error) {
 	s := strings.TrimSpace(err.Error())
 	log.Printf("error: %v", s)
-	if exit {
-		fmt.Fprintf(os.Stderr, "error: %v\n", s)
-		os.Exit(1)
-	}
 }
-func push(c *cli.Context) {
 
-	log.Printf("flag values: --config %v, --tag %v, --branch %v, --image %v, --event %v, --pr %v\n",
-		configFile, buildTag, branch, baseImage, event, pr)
+func push(c *cli.Context) error {
+
+	log.Printf("flag values: --config %v, --tag %v, --branch %v, --image %v, --event %v, --pr %v --debug %v, --verbose %v\n",
+		configFile, buildTag, branch, baseImage, event, pr, c.GlobalBool("debug"), c.GlobalBool("verbose"))
 
 	if err := validateCLInput(); err != nil {
-		exitScript(err, true)
+		logError(err)
+		return err
 	}
 
 	// initialize configuration object
 	cfg := config.New()
 	if err := config.Load(configFile, &cfg); err != nil {
-		exitScript(err, true)
+		logError(err)
+		return err
 	}
 
 	// initialize active registry indicated by config
 	var activeRegistry interface{}
 	var err error
 	if activeRegistry, err = cfg.GetActiveRegistry(); err != nil {
-		exitScript(err, true)
+		logError(err)
+		return err
 	}
 	ar := activeRegistry.(config.Registrator)
 
 	// validate registry has required values
 	if err := ar.IsRegistryValid(); err != nil {
-		exitScript(err, true)
+		logError(err)
+		return err
 	}
 
 	// authenticate credentials for registry
 	if err := ar.Authenticate(); err != nil {
-		exitScript(err, true)
+		logError(err)
+		return err
 	}
 
 	// make list of images to tag
 	var images []string
 	if images, err = makeTagList(ar.GetRepoURL(), baseImage, event, branch, pr); err != nil {
-		exitScript(err, true)
+		logError(err)
+		return err
 	}
 
 	// tag images
 	if err := tagImages(baseImage, images); err != nil {
-		exitScript(err, true)
+		logError(err)
+		return err
 	}
 	log.Println("tagged images:", images)
 
 	// push images
 	var result []string
 	if result, err = ar.Push(images); err != nil {
-		exitScript(err, true)
+		logError(err)
+		return err
 	}
 	log.Println("pushed images:", result)
-
+	return err
 }
