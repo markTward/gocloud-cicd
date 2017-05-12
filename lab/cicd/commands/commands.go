@@ -9,6 +9,7 @@ var verbose bool
 
 // push
 var configFile, buildTag, event, branch, baseImage, pr string
+var dryrun bool
 
 var Commands = []cli.Command{
 	{
@@ -44,6 +45,11 @@ var Commands = []cli.Command{
 				Name:        "branch, b",
 				Usage:       "build branch (required)",
 				Destination: &branch,
+			},
+			cli.BoolFlag{
+				Name:        "dryrun",
+				Usage:       "log output but do not execute",
+				Destination: &dryrun,
 			},
 		},
 		Action: push,

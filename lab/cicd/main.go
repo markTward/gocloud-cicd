@@ -18,6 +18,7 @@ func main() {
 	app.Usage = "Continuous Intergration and Deployment Tools"
 	app.Commands = commands.Commands
 
+	// global flags
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
 			Name:        "verbose",
