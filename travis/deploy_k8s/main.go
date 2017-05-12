@@ -87,17 +87,15 @@ func main() {
 	//TODO: derive activeCDProvider in similar way as registry
 
 	// prepare arguments for helm upgrade
-	args := []string{"--install", release, "--namespace", *namespace, "--debug"}
-	if *dryrun {
-		args = append(args, "--dryrun")
-	}
+	args := []string{"--install", release, "--namespace", *namespace}
 	args = append(args, *chartPath)
+
+	// TODO: process / render workflow.cdprovider.helm.options.(set, ...)
 	log.Println("helm upgrade args: ", args)
 
 	// for testing only
-	args = []string{"--client"}
 	helm := cfg.Workflow.CDProvider.Helm
-	if err = helm.Deploy(args); err != nil {
+	if err = helm.Deploy(&cfg, args); err != nil {
 		exitScript(err, true)
 	}
 	log.Println("deploy_k8s: helm deploy successful")

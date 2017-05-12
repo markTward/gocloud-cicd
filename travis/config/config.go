@@ -61,7 +61,7 @@ type Registrator interface {
 }
 
 type Deployer interface {
-	Deploy()
+	Deploy(Config)
 }
 
 func New() Config {

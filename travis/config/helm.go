@@ -16,12 +16,13 @@ type Helm struct {
 	ChartPath string
 }
 
-func (h *Helm) Deploy(args []string) (err error) {
+func (h *Helm) Deploy(cfg *Config, args []string) (err error) {
+
 	var stderr bytes.Buffer
 	var cmdOut []byte
 
 	// prepend subcommand deploy to args
-	args = append([]string{"version"}, args...)
+	args = append([]string{"upgrade"}, args...)
 	cmd := exec.Command("helm", args...)
 	log.Println(strings.Join(cmd.Args, " "))
 
