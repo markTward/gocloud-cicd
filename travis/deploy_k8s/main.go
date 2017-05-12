@@ -53,7 +53,7 @@ func main() {
 	if activeRegistry, err = cfg.GetActiveRegistry(); err != nil {
 		exitScript(err, true)
 	}
-	ar := activeRegistry.(config.Deployer)
+	ar := activeRegistry.(config.Registrator)
 
 	if err := validateCLInput(&cfg, ar); err != nil {
 		exitScript(err, true)
@@ -72,9 +72,17 @@ func main() {
 	fmt.Println("chartpath:", *chartPath)
 	fmt.Println("repo url:", ar.GetRepoURL())
 
+	//TODO: derive activeCDProvider in similar way as registry
+	// deploy images
+	helm := cfg.Workflow.CDProvider.Helm
+	if err = helm.Deploy([]string{release, "b"}); err != nil {
+		exitScript(err, true)
+	}
+	log.Println("deploy_k8s: helm deploy successful")
+
 }
 
-func validateCLInput(cfg *config.Config, ar config.Deployer) (err error) {
+func validateCLInput(cfg *config.Config, ar config.Registrator) (err error) {
 
 	if *buildTag == "" {
 		err = fmt.Errorf("%v\n", "build tag a required value; use --tag option")
