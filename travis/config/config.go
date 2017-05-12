@@ -59,6 +59,10 @@ type Registrator interface {
 	GetRepoURL() string
 }
 
+type Deployer interface {
+	GetRepoURL() string
+}
+
 func New() Config {
 	return Config{}
 }

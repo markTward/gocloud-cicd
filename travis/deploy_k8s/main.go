@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"strings"
 
 	"github.com/markTward/gocloud-cicd/travis/config"
@@ -38,10 +39,8 @@ func init() {
 }
 
 func main() {
-
 	// parse and validate CLI
 	flag.Parse()
-	log.Printf("command arguments: %#v\n", os.Args)
 
 	// initialize configuration object
 	cfg := config.New()
@@ -49,11 +48,29 @@ func main() {
 		exitScript(err, true)
 	}
 
-	if err := validateCLInput(&cfg); err != nil {
-		exitScript(err, true)
+	log.Printf("flag values: --config %v, --tag %v, -branch %v, --repo %v,--service %v, --namespace %v, --chartpath %v, --dryrun %v\n",
+		*configFile, *buildTag, *branch, *containerRepo, *serviceName, *namespace, *chartPath, *dryrun)
+
+	// point to active registry (docker, gcr, ...)
+	var activeRegistry interface{}
+	switch cfg.Workflow.Registry {
+	case "gcr":
+		activeRegistry = &cfg.Registry.GCR
+	case "docker":
+		activeRegistry = &cfg.Registry.Docker
+	default:
+		fmt.Println("unknown registry")
 	}
 
-	log.Printf("computed flag values: --service %v, --namespace %v, --chartpath %v, --dryrun %v\n", *serviceName, *namespace, *chartPath, *dryrun)
+	// assert activeRegistry as type Registrator to access methods
+	ar := activeRegistry.(config.Deployer)
+
+	t := reflect.ValueOf(ar).Elem()
+	fmt.Printf("ar reflect: %#v\n", t)
+
+	if err := validateCLInput(&cfg, &ar); err != nil {
+		exitScript(err, true)
+	}
 
 	// TODO: make release construction a func/rule that could vary by project?
 	release := *serviceName + "-" + *branch
@@ -63,10 +80,11 @@ func main() {
 	fmt.Println("release:", release)
 	fmt.Println("namespace:", *namespace)
 	fmt.Println("chartpath:", *chartPath)
+	fmt.Println("repo url:")
 
 }
 
-func validateCLInput(cfg *config.Config) (err error) {
+func validateCLInput(cfg *config.Config, ar *config.Deployer) (err error) {
 
 	if *buildTag == "" {
 		err = fmt.Errorf("%v\n", "build tag a required value; use --tag option")
