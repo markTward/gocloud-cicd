@@ -72,10 +72,32 @@ func main() {
 	fmt.Println("chartpath:", *chartPath)
 	fmt.Println("repo url:", ar.GetRepoURL())
 
+	// helm upgrade \
+	// $DRYRUN_OPTION \
+	// --debug \
+	// --install $RELEASE_NAME \
+	// --namespace=$NAMESPACE \
+	//TODO: add --set service.gocloud... to cicd.yaml. how to render?
+	// --set service.gocloudAPI.image.repository=$DOCKER_REPO \
+	// --set service.gocloudAPI.image.tag=":$COMMIT_TAG" \
+	// --set service.gocloudGrpc.image.repository=$DOCKER_REPO \
+	// --set service.gocloudGrpc.image.tag=":$COMMIT_TAG" \
+	// $CHARTPATH
+
 	//TODO: derive activeCDProvider in similar way as registry
-	// deploy images
+
+	// prepare arguments for helm upgrade
+	args := []string{"--install", release, "--namespace", *namespace, "--debug"}
+	if *dryrun {
+		args = append(args, "--dryrun")
+	}
+	args = append(args, *chartPath)
+	log.Println("helm upgrade args: ", args)
+
+	// for testing only
+	args = []string{"--client"}
 	helm := cfg.Workflow.CDProvider.Helm
-	if err = helm.Deploy([]string{release, "b"}); err != nil {
+	if err = helm.Deploy(args); err != nil {
 		exitScript(err, true)
 	}
 	log.Println("deploy_k8s: helm deploy successful")

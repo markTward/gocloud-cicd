@@ -16,26 +16,16 @@ type Helm struct {
 	ChartPath string
 }
 
-// helm upgrade \
-// $DRYRUN_OPTION \
-// --debug \
-// --install $RELEASE_NAME \
-// --namespace=$NAMESPACE \
-// --set service.gocloudAPI.image.repository=$DOCKER_REPO \
-// --set service.gocloudAPI.image.tag=":$COMMIT_TAG" \
-// --set service.gocloudGrpc.image.repository=$DOCKER_REPO \
-// --set service.gocloudGrpc.image.tag=":$COMMIT_TAG" \
-// $CHARTPATH
-
 func (h *Helm) Deploy(args []string) (err error) {
 	var stderr bytes.Buffer
 	var cmdOut []byte
 
-	//TODO: add args to command
-	cmd := exec.Command("helm", "list")
-	cmd.Stderr = &stderr
+	// prepend subcommand deploy to args
+	args = append([]string{"version"}, args...)
+	cmd := exec.Command("helm", args...)
 	log.Println(strings.Join(cmd.Args, " "))
 
+	cmd.Stderr = &stderr
 	if cmdOut, err = cmd.Output(); err != nil {
 		logCmdOutput(stderr.Bytes())
 		err = fmt.Errorf("%v", stderr.String())
