@@ -116,7 +116,6 @@ func validateCLInput(cfg *config.Config, ar config.Deployer) (err error) {
 	}
 
 	if *containerRepo == "" {
-		log.Println("cicd workfloe repo:", ar.GetRepoURL())
 		if cr := ar.GetRepoURL(); cr == "" {
 			err = fmt.Errorf("%v\n", "repoitory url required when not defined in cicd.yaml")
 		} else {
