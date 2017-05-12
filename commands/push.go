@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/markTward/gocloud-cicd/travis/config"
+	"github.com/markTward/gocloud-cicd/config"
 	"gopkg.in/urfave/cli.v1"
 )
 

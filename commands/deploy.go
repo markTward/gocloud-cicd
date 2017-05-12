@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/markTward/gocloud-cicd/travis/config"
+	"github.com/markTward/gocloud-cicd/config"
 )
 
 var configFile, buildTag, containerRepo, branch, serviceName, namespace, chartPath *string
