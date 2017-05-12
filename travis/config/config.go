@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"strings"
@@ -78,6 +79,19 @@ func Load(cf string, cfg *Config) error {
 	err = yaml.Unmarshal([]byte(yamlInput), &cfg)
 	return err
 
+}
+
+func (cfg *Config) GetActiveRegistry() (activeRegistry interface{}, err error) {
+	switch cfg.Workflow.Registry {
+	case "gcr":
+		activeRegistry = &cfg.Registry.GCR
+	case "docker":
+		activeRegistry = &cfg.Registry.Docker
+	default:
+		log.Println("unknown registry")
+		err = fmt.Errorf("unknown workflow registry: <%v>", cfg.Workflow.Registry)
+	}
+	return activeRegistry, err
 }
 
 func logCmdOutput(cmdOut []byte) {

@@ -110,11 +110,13 @@ func main() {
 
 	// parse and validate CLI
 	flag.Parse()
-	log.Printf("command arguments: %#v\n", os.Args)
 
 	if err := validateCLInput(); err != nil {
 		exitScript(err, true)
 	}
+
+	log.Printf("flag values: --config %v, --tag %v, -branch %v, --image %v, --event %v, --pr %v\n",
+		*configFile, *buildTag, *branch, *baseImage, *event, *pr)
 
 	// initialize configuration object
 	cfg := config.New()
@@ -122,19 +124,12 @@ func main() {
 		exitScript(err, true)
 	}
 
-	// point to active registry (docker, gcr, ...)
+	// initialize active registry indicated by config
 	var activeRegistry interface{}
-	switch cfg.Workflow.Registry {
-	case "gcr":
-		activeRegistry = &cfg.Registry.GCR
-	case "docker":
-		activeRegistry = &cfg.Registry.Docker
-	default:
-		log.Printf("unknown workflow registry: <%v>", cfg.Workflow.Registry)
-		exitScript(fmt.Errorf("unknown workflow registry: <%v>", cfg.Workflow.Registry), true)
+	var err error
+	if activeRegistry, err = cfg.GetActiveRegistry(); err != nil {
+		exitScript(err, true)
 	}
-
-	// assert activeRegistry as type Registrator to access methods
 	ar := activeRegistry.(config.Registrator)
 
 	// validate registry has required values
@@ -149,7 +144,6 @@ func main() {
 
 	// make list of images to tag
 	var images []string
-	var err error
 	if images, err = makeTagList(ar.GetRepoURL(), *baseImage, *event, *branch, *pr); err != nil {
 		exitScript(err, true)
 	}

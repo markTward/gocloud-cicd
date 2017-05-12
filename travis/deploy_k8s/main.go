@@ -47,27 +47,20 @@ func main() {
 		exitScript(err, true)
 	}
 
-	log.Printf("flag values: --config %v, --tag %v, -branch %v, --repo %v,--service %v, --namespace %v, --chartpath %v, --dryrun %v\n",
-		*configFile, *buildTag, *branch, *containerRepo, *serviceName, *namespace, *chartPath, *dryrun)
-
-	// point to active registry (docker, gcr, ...)
+	// initialize active registry indicated by config
 	var activeRegistry interface{}
-	switch cfg.Workflow.Registry {
-	case "gcr":
-		activeRegistry = &cfg.Registry.GCR
-	case "docker":
-		activeRegistry = &cfg.Registry.Docker
-	default:
-		log.Println("unknown registry")
-		exitScript(fmt.Errorf("unknown workflow registry: <%v>", cfg.Workflow.Registry), true)
+	var err error
+	if activeRegistry, err = cfg.GetActiveRegistry(); err != nil {
+		exitScript(err, true)
 	}
-
-	// assert activeRegistry as type Deployer to access methods
 	ar := activeRegistry.(config.Deployer)
 
 	if err := validateCLInput(&cfg, ar); err != nil {
 		exitScript(err, true)
 	}
+
+	log.Printf("flag values: --config %v, --tag %v, -branch %v, --repo %v,--service %v, --namespace %v, --chartpath %v, --dryrun %v\n",
+		*configFile, *buildTag, *branch, *containerRepo, *serviceName, *namespace, *chartPath, *dryrun)
 
 	// TODO: make release construction a func/rule that could vary by project?
 	release := *serviceName + "-" + *branch
