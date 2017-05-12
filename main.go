@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/markTward/gocloud-cicd/lab/cicd/commands"
+	"github.com/markTward/gocloud-cicd/commands"
 
 	"gopkg.in/urfave/cli.v1"
 )
