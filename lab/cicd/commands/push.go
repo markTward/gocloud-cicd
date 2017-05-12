@@ -11,6 +11,68 @@ import (
 	"gopkg.in/urfave/cli.v1"
 )
 
+func push(c *cli.Context) error {
+
+	log.Printf("flag values: --config %v, --tag %v, --branch %v, --image %v, --event %v, --pr %v --debug %v, --verbose %v\n",
+		configFile, buildTag, branch, baseImage, event, pr, c.GlobalBool("debug"), c.GlobalBool("verbose"))
+
+	if err := validateCLInput(); err != nil {
+		logError(err)
+		return err
+	}
+
+	// initialize configuration object
+	cfg := config.New()
+	if err := config.Load(configFile, &cfg); err != nil {
+		logError(err)
+		return err
+	}
+
+	// initialize active registry indicated by config
+	var activeRegistry interface{}
+	var err error
+	if activeRegistry, err = cfg.GetActiveRegistry(); err != nil {
+		logError(err)
+		return err
+	}
+	ar := activeRegistry.(config.Registrator)
+
+	// validate registry has required values
+	if err := ar.IsRegistryValid(); err != nil {
+		logError(err)
+		return err
+	}
+
+	// authenticate credentials for registry
+	if err := ar.Authenticate(); err != nil {
+		logError(err)
+		return err
+	}
+
+	// make list of images to tag
+	var images []string
+	if images, err = makeTagList(ar.GetRepoURL(), baseImage, event, branch, pr); err != nil {
+		logError(err)
+		return err
+	}
+
+	// tag images
+	if err := tagImages(baseImage, images); err != nil {
+		logError(err)
+		return err
+	}
+	log.Println("tagged images:", images)
+
+	// push images
+	var result []string
+	if result, err = ar.Push(images); err != nil {
+		logError(err)
+		return err
+	}
+	log.Println("pushed images:", result)
+	return err
+}
+
 func makeTagList(repoURL string, refImage string, event string, branch string, pr string) (images []string, err error) {
 
 	log.Println("Tagger args:", repoURL, refImage, event, branch, pr)
@@ -80,66 +142,4 @@ func validateCLInput() (err error) {
 func logError(err error) {
 	s := strings.TrimSpace(err.Error())
 	log.Printf("error: %v", s)
-}
-
-func push(c *cli.Context) error {
-
-	log.Printf("flag values: --config %v, --tag %v, --branch %v, --image %v, --event %v, --pr %v --debug %v, --verbose %v\n",
-		configFile, buildTag, branch, baseImage, event, pr, c.GlobalBool("debug"), c.GlobalBool("verbose"))
-
-	if err := validateCLInput(); err != nil {
-		logError(err)
-		return err
-	}
-
-	// initialize configuration object
-	cfg := config.New()
-	if err := config.Load(configFile, &cfg); err != nil {
-		logError(err)
-		return err
-	}
-
-	// initialize active registry indicated by config
-	var activeRegistry interface{}
-	var err error
-	if activeRegistry, err = cfg.GetActiveRegistry(); err != nil {
-		logError(err)
-		return err
-	}
-	ar := activeRegistry.(config.Registrator)
-
-	// validate registry has required values
-	if err := ar.IsRegistryValid(); err != nil {
-		logError(err)
-		return err
-	}
-
-	// authenticate credentials for registry
-	if err := ar.Authenticate(); err != nil {
-		logError(err)
-		return err
-	}
-
-	// make list of images to tag
-	var images []string
-	if images, err = makeTagList(ar.GetRepoURL(), baseImage, event, branch, pr); err != nil {
-		logError(err)
-		return err
-	}
-
-	// tag images
-	if err := tagImages(baseImage, images); err != nil {
-		logError(err)
-		return err
-	}
-	log.Println("tagged images:", images)
-
-	// push images
-	var result []string
-	if result, err = ar.Push(images); err != nil {
-		logError(err)
-		return err
-	}
-	log.Println("pushed images:", result)
-	return err
 }
