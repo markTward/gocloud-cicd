@@ -14,6 +14,10 @@ type Helm struct {
 	Release   string
 	Namespace string
 	Chartpath string
+	Options   struct {
+		Flags  []string
+		Values []string
+	}
 }
 
 func (h *Helm) Deploy(cfg *Config, args []string) (err error) {
@@ -24,7 +28,7 @@ func (h *Helm) Deploy(cfg *Config, args []string) (err error) {
 	// prepend subcommand deploy to args
 	args = append([]string{"upgrade"}, args...)
 	cmd := exec.Command("helm", args...)
-	log.Println("execute: helm", strings.Join(cmd.Args, " "))
+	log.Println("execute: ", strings.Join(cmd.Args, " "))
 
 	cmd.Stderr = &stderr
 	if cmdOut, err = cmd.Output(); err != nil {

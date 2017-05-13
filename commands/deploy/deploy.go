@@ -97,36 +97,25 @@ func deploy(c *cli.Context) error {
 	// TODO: make release construction a func/rule that could vary by project?
 	release := serviceName + "-" + branch
 
-	cmd.LogDebug(c, fmt.Sprintf("service: %v", serviceName))
-	cmd.LogDebug(c, fmt.Sprintf("release: %v", release))
-	cmd.LogDebug(c, fmt.Sprintf("namespace: %v", namespace))
-	cmd.LogDebug(c, fmt.Sprintf("chartpath: %v", chartPath))
-	cmd.LogDebug(c, fmt.Sprintf("repo url: %v", containerRepo))
-	cmd.LogDebug(c, fmt.Sprintf("tag: %v", buildTag))
-
-	// helm upgrade \
-	// $DRYRUN_OPTION \
-	// --debug \
-	// --install $RELEASE_NAME \
-	// --namespace=$NAMESPACE \
-	//TODO: add --set service.gocloud... to cicd.yaml. how to render?
-	// --set service.gocloudAPI.image.repository=$DOCKER_REPO \
-	// --set service.gocloudAPI.image.tag=":$COMMIT_TAG" \
-	// --set service.gocloudGrpc.image.repository=$DOCKER_REPO \
-	// --set service.gocloudGrpc.image.tag=":$COMMIT_TAG" \
-	// $CHARTPATH
-
 	//TODO: derive activeCDProvider in similar way as registry
-
 	// prepare arguments for helm upgrade
 	args := []string{"--install", release, "--namespace", namespace}
+	if c.GlobalBool("debug") {
+		args = append(args, "--debug")
+	}
 	if c.BoolT("dryrun") {
 		args = append(args, "--dry-run")
 	}
+
+	for _, v := range cfg.CDProvider.Helm.Options.Values {
+		cmd.LogDebug(c, fmt.Sprintf("add values file: --values %v", v))
+		args = append(args, "--values", v)
+	}
+
 	args = append(args, chartPath)
 
 	// TODO: process / render workflow.cdprovider.helm.options.(set, ...)
-	log.Println("helm upgrade args: ", args)
+	cmd.LogDebug(c, fmt.Sprintf("helm upgrade args: %v", args))
 
 	// for testing only
 	helm := cfg.Workflow.CDProvider.Helm
