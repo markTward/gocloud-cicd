@@ -165,26 +165,20 @@ func tagImages(src string, targets []string) (err error) {
 }
 
 func validateCLInput(c *cli.Context) (err error) {
-
-	if baseImage == "" {
+	switch {
+	case baseImage == "":
 		err = fmt.Errorf("%v", "build image a required value; use --image option")
-	}
 
-	if buildTag == "" {
+	case buildTag == "":
 		err = fmt.Errorf("%v", "build tag a required value; use --tag option")
-	}
 
-	if branch == "" {
+	case branch == "":
 		err = fmt.Errorf("%v", "build branch a required value; use --branch option")
-	}
 
-	switch event {
-	case "push", "pull_request":
-	default:
+	case !(event == "push" || event == "pull_request"):
 		err = fmt.Errorf("%v", "event type must be one of: push, pull_request")
-	}
 
-	if event == "pull_request" && pr == "" {
+	case event == "pull_request" && pr == "":
 		err = fmt.Errorf("%v", "event type pull_request requires a PR number; use --pr option")
 	}
 	return err
