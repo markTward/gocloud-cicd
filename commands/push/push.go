@@ -62,8 +62,8 @@ var PushCmd = cli.Command{
 
 func push(c *cli.Context) error {
 
-	cmd.LogDebug(c, fmt.Sprintf("flag values: --config %v, --tag %v, --branch %v, --image %v, --event %v, --pr %v --debug %v, --verbose %v --dryrun %v",
-		configFile, buildTag, branch, baseImage, event, pr, c.GlobalBool("debug"), c.GlobalBool("verbose"), c.BoolT("dryrun")))
+	cmd.LogDebug(c, fmt.Sprintf("flag values: --config %v, --tag %v, --branch %v, --image %v, --event %v, --pr %v --debug %v, --dryrun %v",
+		configFile, buildTag, branch, baseImage, event, pr, c.GlobalBool("debug"), dryrun))
 
 	if err := validateCLInput(c); err != nil {
 		cmd.LogError(err)
@@ -114,6 +114,7 @@ func push(c *cli.Context) error {
 	}
 	log.Println("tagged images:", images)
 
+	// TODO: add global flags debug, verbose and dryrun as flags args
 	// push images
 	var result []string
 	if result, err = ar.Push(images); err != nil {

@@ -64,10 +64,9 @@ var DeployCmd = cli.Command{
 
 func deploy(c *cli.Context) error {
 
-	cmd.LogDebug(c, fmt.Sprint("dryrun: %v", c.GlobalBool("dryrun")))
 	cmd.LogDebug(c,
-		fmt.Sprintf("flag values: --config %v, --tag %v, -branch %v, --repo %v,--service %v, --namespace %v, --chartpath %v --debug %v, --dryrun, %v --verbose %v\n",
-			configFile, buildTag, branch, containerRepo, serviceName, namespace, chartPath, c.GlobalBool("debug"), c.BoolT("dryrun"), c.GlobalBool("verbose")))
+		fmt.Sprintf("flag values: --config %v, --tag %v, -branch %v, --repo %v,--service %v, --namespace %v, --chartpath %v --debug %v, --dryrun %v",
+			configFile, buildTag, branch, containerRepo, serviceName, namespace, chartPath, c.GlobalBool("debug"), dryrun))
 
 	// initialize configuration object
 	cfg := config.New()
@@ -89,29 +88,40 @@ func deploy(c *cli.Context) error {
 	}
 	ar := activeRegistry.(config.Registrator)
 
-	if err := validateCLInput(c, &cfg, ar); err != nil {
+	if err = validateCLInput(c, &cfg, ar); err != nil {
 		cmd.LogError(err)
 		return err
 	}
 
-	// TODO: make release construction a func/rule that could vary by project?
+	// TODO: pass args and move logic to helm.Deploy method
+	// TODO: make release construction a func/rule that could vary by project/plan?
 	release := serviceName + "-" + branch
 
-	//TODO: derive activeCDProvider in similar way as registry
-	// prepare arguments for helm upgrade
+	// helm required flags
 	args := []string{"--install", release, "--namespace", namespace}
+
+	// config file boolean flags
+	for _, flag := range cfg.Workflow.CDProvider.Helm.Options.Flags {
+		args = append(args, flag)
+	}
+
+	// cli flag conversion
 	if c.GlobalBool("debug") {
 		args = append(args, "--debug")
 	}
-	if c.BoolT("dryrun") {
+
+	if dryrun {
 		args = append(args, "--dry-run")
 	}
 
+	// TODO: values file used  from config is static for testing only
+	// convert to template and render with dynamic repo and tag values
 	for _, v := range cfg.CDProvider.Helm.Options.Values {
 		cmd.LogDebug(c, fmt.Sprintf("add values file: --values %v", v))
 		args = append(args, "--values", v)
 	}
 
+	// chart must be last positional argument
 	args = append(args, chartPath)
 
 	// TODO: process / render workflow.cdprovider.helm.options.(set, ...)
