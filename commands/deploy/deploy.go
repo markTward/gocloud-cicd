@@ -94,7 +94,7 @@ func deploy(c *cli.Context) error {
 	cmd.LogDebug(c, fmt.Sprintf("release: %v", release))
 	cmd.LogDebug(c, fmt.Sprintf("namespace: %v", namespace))
 	cmd.LogDebug(c, fmt.Sprintf("chartpath: %v", chartPath))
-	cmd.LogDebug(c, fmt.Sprintf("repo url: %v", ar.GetRepoURL()))
+	cmd.LogDebug(c, fmt.Sprintf("repo url: %v", containerRepo))
 
 	// helm upgrade \
 	// $DRYRUN_OPTION \
@@ -134,49 +134,60 @@ func deploy(c *cli.Context) error {
 func validateCLInput(c *cli.Context, cfg *config.Config, ar config.Registrator) (err error) {
 
 	if buildTag == "" {
-		err = fmt.Errorf("%v\n", "build tag a required value; use --tag option")
+		err = fmt.Errorf("%v", "build tag a required value")
+		return err
 	}
 
 	if branch == "" {
-		err = fmt.Errorf("%v\n", "build branch a required value; use --branch option")
+		err = fmt.Errorf("%v", "branch a required value")
 	}
 
 	if namespace == "" {
 		if ns := cfg.Workflow.CDProvider.Helm.Namespace; ns == "" {
-			err = fmt.Errorf("%v\n", "namespace required when not defined in cicd.yaml")
+			err = fmt.Errorf("%v", "namespace required when not defined in cicd.yaml")
+			return err
 		} else {
 			namespace = ns
 		}
 	}
 
 	if chartPath == "" {
-		if cp := cfg.Workflow.CDProvider.Helm.ChartPath; cp == "" {
-			err = fmt.Errorf("%v\n", "chart path required when not defined in cicd.yaml")
+		if cp := cfg.Workflow.CDProvider.Helm.Chartpath; cp == "" {
+			err = fmt.Errorf("%v", "chart path required when not defined in cicd.yaml")
+			return err
 		} else {
 			chartPath = cp
 		}
 	}
 
-	if _, err = os.Stat(chartPath); os.IsNotExist(err) {
-		cmd.LogDebug(c, fmt.Sprintf("chart path invalid: %v", err))
-		return fmt.Errorf("chart path invalid: %v", err)
-	}
-
-	if serviceName == "" {
-		if svc := cfg.App.Name; svc == "" {
-			err = fmt.Errorf("%v\n", "service name required when not defined in cicd.yaml")
-		} else {
-			serviceName = svc
-		}
+	if isNotExist(chartPath) {
+		cmd.LogDebug(c, fmt.Sprintf("is not exist chartpath: %v", chartPath))
+		err = fmt.Errorf("chart path invalid: %v", chartPath)
+		return err
 	}
 
 	if containerRepo == "" {
 		if cr := ar.GetRepoURL(); cr == "" {
 			err = fmt.Errorf("%v\n", "repoitory url required when not defined in cicd.yaml")
+			return err
 		} else {
 			containerRepo = cr
 		}
 	}
 
+	if serviceName == "" {
+		if svc := cfg.App.Name; svc == "" {
+			err = fmt.Errorf("%v", "service name required when not defined in cicd.yaml")
+			return err
+		} else {
+			serviceName = svc
+		}
+	}
+
 	return err
+}
+
+func isNotExist(f string) bool {
+	_, err := os.Stat(f)
+	return os.IsNotExist(err)
 }

@@ -13,7 +13,7 @@ type Helm struct {
 	Version   string
 	Release   string
 	Namespace string
-	ChartPath string
+	Chartpath string
 }
 
 func (h *Helm) Deploy(cfg *Config, args []string) (err error) {

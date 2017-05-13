@@ -9,7 +9,7 @@ import (
 
 func LogError(err error) {
 	s := strings.TrimSpace(err.Error())
-	log.Printf("error: %v", s)
+	log.Printf("ERROR: %v", s)
 }
 
 func LogDebug(c *cli.Context, s string) {
