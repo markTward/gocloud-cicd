@@ -24,7 +24,7 @@ func (h *Helm) Deploy(cfg *Config, args []string) (err error) {
 	// prepend subcommand deploy to args
 	args = append([]string{"upgrade"}, args...)
 	cmd := exec.Command("helm", args...)
-	log.Println(strings.Join(cmd.Args, " "))
+	log.Println("execute: helm", strings.Join(cmd.Args, " "))
 
 	cmd.Stderr = &stderr
 	if cmdOut, err = cmd.Output(); err != nil {

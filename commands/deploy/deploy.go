@@ -11,6 +11,7 @@ import (
 )
 
 var configFile, buildTag, containerRepo, branch, serviceName, namespace, chartPath string
+var dryrun bool
 
 var DeployCmd = cli.Command{
 	Name:  "deploy",
@@ -52,15 +53,21 @@ var DeployCmd = cli.Command{
 			Usage:       "path to helm charts",
 			Destination: &chartPath,
 		},
+		cli.BoolFlag{
+			Name:        "dryrun",
+			Usage:       "log output but do not execute",
+			Destination: &dryrun,
+		},
 	},
 	Action: deploy,
 }
 
 func deploy(c *cli.Context) error {
 
+	cmd.LogDebug(c, fmt.Sprint("dryrun: %v", c.GlobalBool("dryrun")))
 	cmd.LogDebug(c,
-		fmt.Sprintf("flag values: --config %v, --tag %v, -branch %v, --repo %v,--service %v, --namespace %v, --chartpath %v --debug %v, -verbose %v\n",
-			configFile, buildTag, branch, containerRepo, serviceName, namespace, chartPath, c.GlobalBool("debug"), c.GlobalBool("verbose")))
+		fmt.Sprintf("flag values: --config %v, --tag %v, -branch %v, --repo %v,--service %v, --namespace %v, --chartpath %v --debug %v, --dryrun, %v --verbose %v\n",
+			configFile, buildTag, branch, containerRepo, serviceName, namespace, chartPath, c.GlobalBool("debug"), c.BoolT("dryrun"), c.GlobalBool("verbose")))
 
 	// initialize configuration object
 	cfg := config.New()
@@ -95,6 +102,7 @@ func deploy(c *cli.Context) error {
 	cmd.LogDebug(c, fmt.Sprintf("namespace: %v", namespace))
 	cmd.LogDebug(c, fmt.Sprintf("chartpath: %v", chartPath))
 	cmd.LogDebug(c, fmt.Sprintf("repo url: %v", containerRepo))
+	cmd.LogDebug(c, fmt.Sprintf("tag: %v", buildTag))
 
 	// helm upgrade \
 	// $DRYRUN_OPTION \
@@ -112,8 +120,8 @@ func deploy(c *cli.Context) error {
 
 	// prepare arguments for helm upgrade
 	args := []string{"--install", release, "--namespace", namespace}
-	if c.GlobalBool("dryrun") {
-		args = append(args, "--dryrun")
+	if c.BoolT("dryrun") {
+		args = append(args, "--dry-run")
 	}
 	args = append(args, chartPath)
 
