@@ -65,7 +65,7 @@ func push(c *cli.Context) error {
 	cmd.LogDebug(c, fmt.Sprintf("flag values: --config %v, --tag %v, --branch %v, --image %v, --event %v, --pr %v --debug %v, --verbose %v\n",
 		configFile, buildTag, branch, baseImage, event, pr, c.GlobalBool("debug"), c.GlobalBool("verbose")))
 
-	if err := validateCLInput(); err != nil {
+	if err := validateCLInput(c); err != nil {
 		cmd.LogError(err)
 		return err
 	}
@@ -76,6 +76,8 @@ func push(c *cli.Context) error {
 		cmd.LogError(err)
 		return err
 	}
+
+	cmd.LogDebug(c, fmt.Sprintf("Config: %#v", cfg))
 
 	// initialize active registry indicated by config
 	var activeRegistry interface{}
@@ -162,7 +164,7 @@ func tagImages(src string, targets []string) (err error) {
 	return err
 }
 
-func validateCLInput() (err error) {
+func validateCLInput(c *cli.Context) (err error) {
 
 	if baseImage == "" {
 		err = fmt.Errorf("%v", "build image a required value; use --image option")
