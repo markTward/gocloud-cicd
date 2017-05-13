@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/markTward/gocloud-cicd/commands"
-
+	d "github.com/markTward/gocloud-cicd/commands/deploy"
+	p "github.com/markTward/gocloud-cicd/commands/push"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -16,11 +16,6 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "CICD Tools"
 	app.Usage = "Continuous Intergration and Deployment Tools"
-	app.Commands = []cli.Command{
-		commands.PushCmd,
-	}
-
-	// global flags
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
 			Name:        "verbose",
@@ -32,6 +27,10 @@ func main() {
 			Usage:       "Show detailed debugging output",
 			Destination: &debug,
 		},
+	}
+	app.Commands = []cli.Command{
+		p.PushCmd,
+		d.DeployCmd,
 	}
 
 	app.Run(os.Args)

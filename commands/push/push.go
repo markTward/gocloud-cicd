@@ -1,4 +1,4 @@
-package commands
+package push
 
 import (
 	"bytes"
@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
+	cmd "github.com/markTward/gocloud-cicd/commands"
 	"github.com/markTward/gocloud-cicd/config"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -16,21 +17,23 @@ var dryrun bool
 
 var PushCmd = cli.Command{
 	Name:  "push",
-	Usage: "push images to repository",
+	Usage: "push images to repository (gcr or docker)",
 	Flags: []cli.Flag{
 		cli.StringFlag{
-			Name:        "image",
+			Name:        "image, i",
 			Usage:       "built image used as basis for tagging (required)",
 			Destination: &baseImage,
 		},
 		cli.StringFlag{
-			Name:        "config",
+			Name:        "config, c",
 			Usage:       "configuration file containing project workflow values",
+			Value:       "./cicd.yaml",
 			Destination: &configFile,
 		},
 		cli.StringFlag{
-			Name:        "event",
+			Name:        "event, e",
 			Usage:       "build event type from list: push, pull_request",
+			Value:       "push",
 			Destination: &event,
 		},
 		cli.StringFlag{
@@ -59,20 +62,18 @@ var PushCmd = cli.Command{
 
 func push(c *cli.Context) error {
 
-	if debug(c) {
-		log.Printf("flag values: --config %v, --tag %v, --branch %v, --image %v, --event %v, --pr %v --debug %v, --verbose %v\n",
-			configFile, buildTag, branch, baseImage, event, pr, c.GlobalBool("debug"), c.GlobalBool("verbose"))
-	}
+	cmd.LogDebug(c, fmt.Sprintf("flag values: --config %v, --tag %v, --branch %v, --image %v, --event %v, --pr %v --debug %v, --verbose %v\n",
+		configFile, buildTag, branch, baseImage, event, pr, c.GlobalBool("debug"), c.GlobalBool("verbose")))
 
 	if err := validateCLInput(); err != nil {
-		logError(err)
+		cmd.LogError(err)
 		return err
 	}
 
 	// initialize configuration object
 	cfg := config.New()
 	if err := config.Load(configFile, &cfg); err != nil {
-		logError(err)
+		cmd.LogError(err)
 		return err
 	}
 
@@ -80,33 +81,33 @@ func push(c *cli.Context) error {
 	var activeRegistry interface{}
 	var err error
 	if activeRegistry, err = cfg.GetActiveRegistry(); err != nil {
-		logError(err)
+		cmd.LogError(err)
 		return err
 	}
 	ar := activeRegistry.(config.Registrator)
 
 	// validate registry has required values
 	if err := ar.IsRegistryValid(); err != nil {
-		logError(err)
+		cmd.LogError(err)
 		return err
 	}
 
 	// authenticate credentials for registry
 	if err := ar.Authenticate(); err != nil {
-		logError(err)
+		cmd.LogError(err)
 		return err
 	}
 
 	// make list of images to tag
 	var images []string
 	if images, err = makeTagList(ar.GetRepoURL(), baseImage, event, branch, pr); err != nil {
-		logError(err)
+		cmd.LogError(err)
 		return err
 	}
 
 	// tag images
 	if err := tagImages(baseImage, images); err != nil {
-		logError(err)
+		cmd.LogError(err)
 		return err
 	}
 	log.Println("tagged images:", images)
@@ -114,7 +115,7 @@ func push(c *cli.Context) error {
 	// push images
 	var result []string
 	if result, err = ar.Push(images); err != nil {
-		logError(err)
+		cmd.LogError(err)
 		return err
 	}
 	log.Println("pushed images:", result)
@@ -185,13 +186,4 @@ func validateCLInput() (err error) {
 		err = fmt.Errorf("%v", "event type pull_request requires a PR number; use --pr option")
 	}
 	return err
-}
-
-func logError(err error) {
-	s := strings.TrimSpace(err.Error())
-	log.Printf("error: %v", s)
-}
-
-func debug(c *cli.Context) bool {
-	return c.GlobalBool("debug")
 }
