@@ -136,13 +136,13 @@ func deploy(c *cli.Context) error {
 	cmd.LogDebug(c, fmt.Sprintf("helm dynamic values file: %v", vf.Name()))
 
 	// render
-	err = renderHelmValuesFile(vf, &cfg, containerRepo, buildTag)
+	err = renderHelmValuesFile(c, &cfg, vf, containerRepo, buildTag)
 	if err != nil {
 		return fmt.Errorf("renderHelmValuesFile(): %v", err)
 	}
 
 	// join flags and positional args
-	args = append(args, "--values", f.Name())
+	args = append(args, "--values", vf.Name())
 	args = append(args, chartPath)
 
 	helm := cfg.Workflow.CDProvider.Helm
@@ -153,7 +153,7 @@ func deploy(c *cli.Context) error {
 	return err
 }
 
-func renderHelmValuesFile(f *os.File, cfg *config.Config, repo string, tag string) error {
+func renderHelmValuesFile(c *cli.Context, cfg *config.Config, vf *os.File, repo string, tag string) error {
 	type Values struct {
 		Repo, Tag, ServiceType string
 	}
@@ -169,11 +169,12 @@ func renderHelmValuesFile(f *os.File, cfg *config.Config, repo string, tag strin
 	}
 
 	// render the template
-	log.Println("output file before exec:", f.Name())
-	err = t.Execute(f, values)
+	cmd.LogDebug(c, fmt.Sprintf("output file before exec: %v", vf.Name()))
+	log.Println()
+	err = t.Execute(vf, values)
 
 	// verify rendered file contents
-	yaml, err := ioutil.ReadFile(f.Name())
+	yaml, err := ioutil.ReadFile(vf.Name())
 	if err != nil {
 		log.Println("error read yaml:", err)
 		return err
