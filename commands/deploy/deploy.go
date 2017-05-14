@@ -96,7 +96,6 @@ func deploy(c *cli.Context) error {
 	}
 
 	// TODO: pass args and move logic to helm.Deploy method
-	// TODO: make release construction a func/rule that could vary by project/plan?
 	release := serviceName + "-" + branch
 
 	// helm required flags
@@ -116,47 +115,40 @@ func deploy(c *cli.Context) error {
 		args = append(args, "--dry-run")
 	}
 
-	var f *os.File
+	// acquire runtime values filename
+	var vf *os.File
 
 	switch {
 	case cfg.Workflow.CDProvider.Helm.Options.Values.Output == "":
-		f, err = ioutil.TempFile("", "runtime_values.yaml")
-		log.Println("tmp output file:", f.Name())
+		vf, err = ioutil.TempFile("", "runtime_values.yaml")
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer os.Remove(f.Name()) // clean up
+		defer os.Remove(vf.Name())
 	default:
-		// create target file for output
-		f, err = os.Create(cfg.Workflow.CDProvider.Helm.Options.Values.Output)
-		log.Println("cicd output file:", f.Name())
+		vf, err = os.Create(cfg.Workflow.CDProvider.Helm.Options.Values.Output)
 		if err != nil {
 			return err
 		}
-		defer f.Close()
+		defer vf.Close()
 	}
 
-	err = renderHelmValuesFile(f, &cfg, containerRepo, buildTag)
+	cmd.LogDebug(c, fmt.Sprintf("helm dynamic values file: %v", vf.Name()))
+
+	// render
+	err = renderHelmValuesFile(vf, &cfg, containerRepo, buildTag)
 	if err != nil {
 		return fmt.Errorf("renderHelmValuesFile(): %v", err)
 	}
-	cmd.LogDebug(c, fmt.Sprintf("helm dynamic values file: %v", f.Name()))
 
+	// join flags and positional args
 	args = append(args, "--values", f.Name())
-
-	// chart must be last positional argument
 	args = append(args, chartPath)
 
-	// TODO: process / render workflow.cdprovider.helm.options.(set, ...)
-	cmd.LogDebug(c, fmt.Sprintf("helm upgrade args: %v", args))
-
-	// for testing only
 	helm := cfg.Workflow.CDProvider.Helm
 	if err = helm.Deploy(&cfg, args); err != nil {
 		cmd.LogError(err)
-		return err
 	}
-	log.Println("deploy_k8s: helm deploy successful")
 
 	return err
 }
