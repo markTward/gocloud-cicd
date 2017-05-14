@@ -2,6 +2,8 @@ package deploy
 
 import (
 	"fmt"
+	"html/template"
+	"io/ioutil"
 	"log"
 	"os"
 
@@ -114,11 +116,33 @@ func deploy(c *cli.Context) error {
 		args = append(args, "--dry-run")
 	}
 
-	// TODO: values file using Output until Template rendering process installed
-	// TODO: convert to template and render with dynamic repo and tag values
-	vf := cfg.Workflow.CDProvider.Helm.Options.Values.Output
-	cmd.LogDebug(c, fmt.Sprintf("add values file: --values %v", vf))
-	args = append(args, "--values", vf)
+	var f *os.File
+
+	switch {
+	case cfg.Workflow.CDProvider.Helm.Options.Values.Output == "":
+		f, err = ioutil.TempFile("", "runtime_values.yaml")
+		log.Println("tmp output file:", f.Name())
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer os.Remove(f.Name()) // clean up
+	default:
+		// create target file for output
+		f, err = os.Create(cfg.Workflow.CDProvider.Helm.Options.Values.Output)
+		log.Println("cicd output file:", f.Name())
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+	}
+
+	err = renderHelmValuesFile(f, &cfg, containerRepo, buildTag)
+	if err != nil {
+		return fmt.Errorf("renderHelmValuesFile(): %v", err)
+	}
+	cmd.LogDebug(c, fmt.Sprintf("helm dynamic values file: %v", f.Name()))
+
+	args = append(args, "--values", f.Name())
 
 	// chart must be last positional argument
 	args = append(args, chartPath)
@@ -133,6 +157,37 @@ func deploy(c *cli.Context) error {
 		return err
 	}
 	log.Println("deploy_k8s: helm deploy successful")
+
+	return err
+}
+
+func renderHelmValuesFile(f *os.File, cfg *config.Config, repo string, tag string) error {
+	type Values struct {
+		Repo, Tag, ServiceType string
+	}
+
+	// Prepare some data to insert into the template.
+	var values = Values{Repo: repo, Tag: tag}
+
+	// initialize the template
+	var t *template.Template
+	var err error
+	if t, err = template.ParseFiles(cfg.Workflow.CDProvider.Helm.Options.Values.Template); err != nil {
+		return err
+	}
+
+	// render the template
+	log.Println("output file before exec:", f.Name())
+	err = t.Execute(f, values)
+
+	// verify rendered file contents
+	yaml, err := ioutil.ReadFile(f.Name())
+	if err != nil {
+		log.Println("error read yaml:", err)
+		return err
+	}
+
+	log.Println(string(yaml))
 
 	return err
 }
