@@ -114,12 +114,11 @@ func deploy(c *cli.Context) error {
 		args = append(args, "--dry-run")
 	}
 
-	// TODO: values file used  from config is static for testing only
-	// convert to template and render with dynamic repo and tag values
-	for _, v := range cfg.CDProvider.Helm.Options.Values {
-		cmd.LogDebug(c, fmt.Sprintf("add values file: --values %v", v))
-		args = append(args, "--values", v)
-	}
+	// TODO: values file using Output until Template rendering process installed
+	// TODO: convert to template and render with dynamic repo and tag values
+	vf := cfg.Workflow.CDProvider.Helm.Options.Values.Output
+	cmd.LogDebug(c, fmt.Sprintf("add values file: --values %v", vf))
+	args = append(args, "--values", vf)
 
 	// chart must be last positional argument
 	args = append(args, chartPath)

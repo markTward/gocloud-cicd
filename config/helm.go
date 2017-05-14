@@ -16,7 +16,10 @@ type Helm struct {
 	Chartpath string
 	Options   struct {
 		Flags  []string
-		Values []string
+		Values struct {
+			Template string
+			Output   string
+		}
 	}
 }
 
