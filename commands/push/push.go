@@ -12,7 +12,7 @@ import (
 	"gopkg.in/urfave/cli.v1"
 )
 
-var configFile, buildTag, event, branch, baseImage, pr string
+var configFile, event, branch, baseImage, pr string
 var dryrun bool
 
 var PushCmd = cli.Command{
@@ -42,11 +42,6 @@ var PushCmd = cli.Command{
 			Destination: &pr,
 		},
 		cli.StringFlag{
-			Name:        "tag, t",
-			Usage:       "existing image tag used as basis for further tags (required)",
-			Destination: &buildTag,
-		},
-		cli.StringFlag{
 			Name:        "branch, b",
 			Usage:       "build branch (required)",
 			Destination: &branch,
@@ -62,8 +57,8 @@ var PushCmd = cli.Command{
 
 func push(c *cli.Context) error {
 
-	cmd.LogDebug(c, fmt.Sprintf("flag values: --config %v, --tag %v, --branch %v, --image %v, --event %v, --pr %v --debug %v, --dryrun %v",
-		configFile, buildTag, branch, baseImage, event, pr, c.GlobalBool("debug"), dryrun))
+	cmd.LogDebug(c, fmt.Sprintf("flag values: --config %v, --branch %v, --image %v, --event %v, --pr %v --debug %v, --dryrun %v",
+		configFile, branch, baseImage, event, pr, c.GlobalBool("debug"), dryrun))
 
 	if err := validateCLInput(c); err != nil {
 		cmd.LogError(err)
@@ -169,9 +164,6 @@ func validateCLInput(c *cli.Context) (err error) {
 	switch {
 	case baseImage == "":
 		err = fmt.Errorf("%v", "build image a required value; use --image option")
-
-	case buildTag == "":
-		err = fmt.Errorf("%v", "build tag a required value; use --tag option")
 
 	case branch == "":
 		err = fmt.Errorf("%v", "build branch a required value; use --branch option")
