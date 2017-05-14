@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"strings"
@@ -18,6 +19,7 @@ type Config struct {
 type App struct {
 	Name string
 }
+
 type Github struct {
 	Repo string
 }
@@ -58,6 +60,10 @@ type Registrator interface {
 	GetRepoURL() string
 }
 
+type Deployer interface {
+	Deploy(Config)
+}
+
 func New() Config {
 	return Config{}
 }
@@ -73,6 +79,19 @@ func Load(cf string, cfg *Config) error {
 	err = yaml.Unmarshal([]byte(yamlInput), &cfg)
 	return err
 
+}
+
+func (cfg *Config) GetActiveRegistry() (activeRegistry interface{}, err error) {
+	switch cfg.Workflow.Registry {
+	case "gcr":
+		activeRegistry = &cfg.Registry.GCR
+	case "docker":
+		activeRegistry = &cfg.Registry.Docker
+	default:
+		log.Println("unknown registry")
+		err = fmt.Errorf("unknown workflow registry: <%v>", cfg.Workflow.Registry)
+	}
+	return activeRegistry, err
 }
 
 func logCmdOutput(cmdOut []byte) {

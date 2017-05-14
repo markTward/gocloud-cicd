@@ -20,9 +20,7 @@ type GCR struct {
 }
 
 func (r *GCR) GetRepoURL() (repoURL string) {
-	repo := []string{r.Host, r.Project, r.Repo}
-	repoURL = strings.Join(repo, "/")
-	return repoURL
+	return r.Url
 }
 
 func (r *GCR) Authenticate() (err error) {
@@ -61,6 +59,7 @@ func (gcr *GCR) Push(images []string) (pushed []string, err error) {
 		cmd := exec.Command("gcloud", "docker", "--", "push", image)
 		cmd.Stderr = &stderr
 
+		// TODO: add --dry-run flag conditional logic
 		log.Println(strings.Join(cmd.Args, " "))
 
 		if cmdOut, err = cmd.Output(); err != nil {
