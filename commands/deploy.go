@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/markTward/gocloud-cicd/config"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -76,7 +77,7 @@ func deploy(c *cli.Context) error {
 		return err
 	}
 
-	LogDebug(c, fmt.Sprintf("Config: %#v", cfg))
+	LogDebug(c, fmt.Sprintf("%v", spew.Sdump(cfg)))
 
 	// initialize active Registry indicated by config and assert as Registrator
 	var activeRegistry interface{}

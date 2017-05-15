@@ -27,7 +27,9 @@ func main() {
 		exitScript(err, true)
 	}
 
-	spew.Dump(cfg)
+	// spew.Dump(cfg)
+	// log.Println()
+	log.Println(fmt.Sprintf("Config: %v", spew.Sdump(cfg)))
 
 	// fmt.Println("Default APP:", cfg.App.Name)
 	// yamlInput, err = ioutil.ReadFile("./cicduser.yaml")
