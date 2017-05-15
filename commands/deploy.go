@@ -18,20 +18,30 @@ var DeployCmd = cli.Command{
 	Usage: "deploy services to providers (helm ==> k8s)",
 	Flags: []cli.Flag{
 		cli.StringFlag{
-			Name:        "repo, r",
-			Usage:       "repository source for images",
-			Destination: &containerRepo,
+			Name:        "branch, b",
+			Usage:       "build branch (required)",
+			Destination: &branch,
+		},
+		cli.StringFlag{
+			Name:        "chart",
+			Usage:       "`PATH` to helm charts",
+			Destination: &chartPath,
 		},
 		cli.StringFlag{
 			Name:        "config, c",
-			Usage:       "configuration file containing project workflow values",
+			Usage:       "load configuration file from `FILE`",
 			Value:       "./cicd.yaml",
 			Destination: &configFile,
 		},
+		cli.BoolFlag{
+			Name:        "dryrun",
+			Usage:       "log output but do not execute",
+			Destination: &dryrun,
+		},
 		cli.StringFlag{
-			Name:        "service, s",
-			Usage:       "service name",
-			Destination: &serviceName,
+			Name:        "repo, r",
+			Usage:       "repository source for images",
+			Destination: &containerRepo,
 		},
 		cli.StringFlag{
 			Name:        "namespace, n",
@@ -39,24 +49,14 @@ var DeployCmd = cli.Command{
 			Destination: &namespace,
 		},
 		cli.StringFlag{
+			Name:        "service, s",
+			Usage:       "service name",
+			Destination: &serviceName,
+		},
+		cli.StringFlag{
 			Name:        "tag, t",
 			Usage:       "existing image tag used as basis for further tags (required)",
 			Destination: &buildTag,
-		},
-		cli.StringFlag{
-			Name:        "branch, b",
-			Usage:       "build branch (required)",
-			Destination: &branch,
-		},
-		cli.StringFlag{
-			Name:        "chart",
-			Usage:       "path to helm charts",
-			Destination: &chartPath,
-		},
-		cli.BoolFlag{
-			Name:        "dryrun",
-			Usage:       "log output but do not execute",
-			Destination: &dryrun,
 		},
 	},
 	Action: deploy,

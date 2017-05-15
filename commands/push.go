@@ -18,15 +18,20 @@ var PushCmd = cli.Command{
 	Usage: "push images to repository (gcr or docker)",
 	Flags: []cli.Flag{
 		cli.StringFlag{
-			Name:        "image, i",
-			Usage:       "built image used as basis for tagging (required)",
-			Destination: &baseImage,
+			Name:        "branch, b",
+			Usage:       "build branch (required)",
+			Destination: &branch,
 		},
 		cli.StringFlag{
 			Name:        "config, c",
-			Usage:       "configuration file containing project workflow values",
+			Usage:       "load configuration file from `FILE`",
 			Value:       "./cicd.yaml",
 			Destination: &configFile,
+		},
+		cli.BoolFlag{
+			Name:        "dryrun",
+			Usage:       "log output but do not execute",
+			Destination: &dryrun,
 		},
 		cli.StringFlag{
 			Name:        "event, e",
@@ -35,19 +40,14 @@ var PushCmd = cli.Command{
 			Destination: &event,
 		},
 		cli.StringFlag{
+			Name:        "image, i",
+			Usage:       "built image used as basis for tagging (required)",
+			Destination: &baseImage,
+		},
+		cli.StringFlag{
 			Name:        "pr",
 			Usage:       "pull request number (required when event type is pull_request)",
 			Destination: &pr,
-		},
-		cli.StringFlag{
-			Name:        "branch, b",
-			Usage:       "build branch (required)",
-			Destination: &branch,
-		},
-		cli.BoolFlag{
-			Name:        "dryrun",
-			Usage:       "log output but do not execute",
-			Destination: &dryrun,
 		},
 	},
 	Action: push,

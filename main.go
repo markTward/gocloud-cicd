@@ -28,8 +28,8 @@ func main() {
 		},
 	}
 	app.Commands = []cli.Command{
-		commands.PushCmd,
 		commands.DeployCmd,
+		commands.PushCmd,
 	}
 
 	app.Run(os.Args)
