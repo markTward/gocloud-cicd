@@ -11,6 +11,7 @@ import (
 type Helm struct {
 	Name      string
 	Version   string
+	Enabled   bool
 	Release   string
 	Namespace string
 	Chartpath string

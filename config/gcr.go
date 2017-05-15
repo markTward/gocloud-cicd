@@ -12,6 +12,7 @@ import (
 type GCR struct {
 	Name        string
 	Description string
+	Enabled     bool
 	Host        string
 	Project     string
 	Repo        string
