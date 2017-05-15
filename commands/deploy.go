@@ -93,6 +93,14 @@ func deploy(c *cli.Context) error {
 		return err
 	}
 
+	// initialize active registry indicated by config
+	var activeCDProvider interface{}
+	if activeCDProvider, err = cfg.GetActiveCDProvider(); err != nil {
+		LogError(err)
+		return err
+	}
+	ad := activeCDProvider.(config.Deployer)
+
 	// TODO: pass args and move logic to helm.Deploy method
 	release := serviceName + "-" + branch
 
@@ -116,6 +124,7 @@ func deploy(c *cli.Context) error {
 	// acquire runtime values filename
 	var vf *os.File
 
+	// use defined output file when defined.  otherwise create/remove a TempFile
 	switch {
 	case cfg.Workflow.CDProvider.Helm.Options.Values.Output == "":
 		vf, err = ioutil.TempFile("", "runtime_values.yaml")
@@ -133,7 +142,7 @@ func deploy(c *cli.Context) error {
 
 	LogDebug(c, fmt.Sprintf("helm dynamic values file: %v", vf.Name()))
 
-	// render
+	// render values file from template
 	err = renderHelmValuesFile(c, &cfg, vf, containerRepo, buildTag)
 	if err != nil {
 		return fmt.Errorf("renderHelmValuesFile(): %v", err)
@@ -143,8 +152,8 @@ func deploy(c *cli.Context) error {
 	args = append(args, "--values", vf.Name())
 	args = append(args, chartPath)
 
-	helm := cfg.Workflow.CDProvider.Helm
-	if err = helm.Deploy(&cfg, args); err != nil {
+	// deploy using active CD provider
+	if err = ad.Deploy(&cfg, args); err != nil {
 		LogError(err)
 	}
 

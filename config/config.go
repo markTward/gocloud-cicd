@@ -65,7 +65,7 @@ type Registrator interface {
 }
 
 type Deployer interface {
-	Deploy(Config)
+	Deploy(*Config, []string) error
 }
 
 func New() Config {
@@ -92,10 +92,21 @@ func (cfg *Config) GetActiveRegistry() (activeRegistry interface{}, err error) {
 	case "docker":
 		activeRegistry = &cfg.Registry.Docker
 	default:
-		log.Println("unknown registry")
 		err = fmt.Errorf("unknown workflow registry: <%v>", cfg.Workflow.Provider.Registry)
+		log.Println(err)
 	}
 	return activeRegistry, err
+}
+
+func (cfg *Config) GetActiveCDProvider() (activeCD interface{}, err error) {
+	switch cfg.Workflow.Provider.CD {
+	case "helm":
+		activeCD = &cfg.CDProvider.Helm
+	default:
+		err = fmt.Errorf("unknown workflow CD provider: <%v>", cfg.Workflow.Provider.CD)
+		log.Println(err)
+	}
+	return activeCD, err
 }
 
 func logCmdOutput(cmdOut []byte) {
