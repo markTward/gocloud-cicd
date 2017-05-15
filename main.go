@@ -3,8 +3,7 @@ package main
 import (
 	"os"
 
-	d "github.com/markTward/gocloud-cicd/commands/deploy"
-	p "github.com/markTward/gocloud-cicd/commands/push"
+	"github.com/markTward/gocloud-cicd/commands"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -29,8 +28,8 @@ func main() {
 		},
 	}
 	app.Commands = []cli.Command{
-		p.PushCmd,
-		d.DeployCmd,
+		commands.PushCmd,
+		commands.DeployCmd,
 	}
 
 	app.Run(os.Args)

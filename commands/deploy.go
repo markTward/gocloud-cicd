@@ -1,4 +1,4 @@
-package deploy
+package commands
 
 import (
 	"fmt"
@@ -7,13 +7,11 @@ import (
 	"log"
 	"os"
 
-	cmd "github.com/markTward/gocloud-cicd/commands"
 	"github.com/markTward/gocloud-cicd/config"
 	"gopkg.in/urfave/cli.v1"
 )
 
-var configFile, buildTag, containerRepo, branch, serviceName, namespace, chartPath string
-var dryrun bool
+var buildTag, containerRepo, serviceName, namespace, chartPath string
 
 var DeployCmd = cli.Command{
 	Name:  "deploy",
@@ -66,32 +64,32 @@ var DeployCmd = cli.Command{
 
 func deploy(c *cli.Context) error {
 
-	cmd.LogDebug(c,
+	LogDebug(c,
 		fmt.Sprintf("flag values: --config %v, --tag %v, -branch %v, --repo %v,--service %v, --namespace %v, --chartpath %v --debug %v, --dryrun %v",
 			configFile, buildTag, branch, containerRepo, serviceName, namespace, chartPath, c.GlobalBool("debug"), dryrun))
 
 	// initialize configuration object
 	cfg := config.New()
 	if err := config.Load(configFile, &cfg); err != nil {
-		cmd.LogDebug(c, "config error?")
-		cmd.LogError(err)
+		LogDebug(c, "config error?")
+		LogError(err)
 		return err
 	}
 
-	cmd.LogDebug(c, fmt.Sprintf("Config: %#v", cfg))
+	LogDebug(c, fmt.Sprintf("Config: %#v", cfg))
 
 	// initialize active registry indicated by config
 	var activeRegistry interface{}
 	var err error
 	if activeRegistry, err = cfg.GetActiveRegistry(); err != nil {
-		cmd.LogError(err)
+		LogError(err)
 		return err
 
 	}
 	ar := activeRegistry.(config.Registrator)
 
-	if err = validateCLInput(c, &cfg, ar); err != nil {
-		cmd.LogError(err)
+	if err = validateDeployArgs(c, &cfg, ar); err != nil {
+		LogError(err)
 		return err
 	}
 
@@ -133,7 +131,7 @@ func deploy(c *cli.Context) error {
 		defer vf.Close()
 	}
 
-	cmd.LogDebug(c, fmt.Sprintf("helm dynamic values file: %v", vf.Name()))
+	LogDebug(c, fmt.Sprintf("helm dynamic values file: %v", vf.Name()))
 
 	// render
 	err = renderHelmValuesFile(c, &cfg, vf, containerRepo, buildTag)
@@ -147,7 +145,7 @@ func deploy(c *cli.Context) error {
 
 	helm := cfg.Workflow.CDProvider.Helm
 	if err = helm.Deploy(&cfg, args); err != nil {
-		cmd.LogError(err)
+		LogError(err)
 	}
 
 	return err
@@ -169,7 +167,7 @@ func renderHelmValuesFile(c *cli.Context, cfg *config.Config, vf *os.File, repo 
 	}
 
 	// render the template
-	cmd.LogDebug(c, fmt.Sprintf("output file before exec: %v", vf.Name()))
+	LogDebug(c, fmt.Sprintf("output file before exec: %v", vf.Name()))
 	log.Println()
 	err = t.Execute(vf, values)
 
@@ -185,7 +183,7 @@ func renderHelmValuesFile(c *cli.Context, cfg *config.Config, vf *os.File, repo 
 	return err
 }
 
-func validateCLInput(c *cli.Context, cfg *config.Config, ar config.Registrator) (err error) {
+func validateDeployArgs(c *cli.Context, cfg *config.Config, ar config.Registrator) (err error) {
 
 	if buildTag == "" {
 		err = fmt.Errorf("%v", "build tag a required value")
@@ -215,7 +213,7 @@ func validateCLInput(c *cli.Context, cfg *config.Config, ar config.Registrator) 
 	}
 
 	if isNotExist(chartPath) {
-		cmd.LogDebug(c, fmt.Sprintf("is not exist chartpath: %v", chartPath))
+		LogDebug(c, fmt.Sprintf("is not exist chartpath: %v", chartPath))
 		err = fmt.Errorf("chart path invalid: %v", chartPath)
 		return err
 	}
