@@ -59,7 +59,7 @@ type Workflow struct {
 
 type Registrator interface {
 	IsRegistryValid() error
-	Push([]string) ([]string, error)
+	Push([]string, bool) ([]string, error)
 	Authenticate() error
 	GetRepoURL() string
 }

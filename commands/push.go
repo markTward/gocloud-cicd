@@ -108,10 +108,9 @@ func push(c *cli.Context) error {
 	}
 	log.Println("tagged images:", images)
 
-	// TODO: add global flags debug, verbose and dryrun as flags args
-	// push images
+	// push tagged images
 	var result []string
-	if result, err = ar.Push(images); err != nil {
+	if result, err = ar.Push(images, dryrun); err != nil {
 		LogError(err)
 		return err
 	}

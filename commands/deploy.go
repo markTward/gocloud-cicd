@@ -117,6 +117,7 @@ func deploy(c *cli.Context) error {
 		args = append(args, "--debug")
 	}
 
+	// convert cicd --dryrun arg to helm dialect
 	if dryrun {
 		args = append(args, "--dry-run")
 	}

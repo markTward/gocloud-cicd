@@ -50,7 +50,7 @@ func (r *GCR) Authenticate() (err error) {
 
 }
 
-func (gcr *GCR) Push(images []string) (pushed []string, err error) {
+func (gcr *GCR) Push(images []string, isDryrun bool) (pushed []string, err error) {
 	var stderr bytes.Buffer
 	var cmdOut []byte
 	// IDEA: could use single command to push all repo images: gcloud docker -- push gcr.io/k8sdemo-159622/gocloud
@@ -60,18 +60,20 @@ func (gcr *GCR) Push(images []string) (pushed []string, err error) {
 		cmd := exec.Command("gcloud", "docker", "--", "push", image)
 		cmd.Stderr = &stderr
 
-		// TODO: add --dry-run flag conditional logic
-		log.Println(strings.Join(cmd.Args, " "))
+		if !isDryrun {
+			log.Println("execute: ", strings.Join(cmd.Args, " "))
 
-		if cmdOut, err = cmd.Output(); err != nil {
-			logCmdOutput(stderr.Bytes())
-			err = fmt.Errorf("%v: %v", image, stderr.String())
-			break
+			if cmdOut, err = cmd.Output(); err != nil {
+				logCmdOutput(stderr.Bytes())
+				err = fmt.Errorf("%v: %v", image, stderr.String())
+				break
+			}
+			pushed = append(pushed, image)
+			logCmdOutput(cmdOut)
+
+		} else {
+			log.Println("dryrun: ", strings.Join(cmd.Args, " "))
 		}
-
-		logCmdOutput(cmdOut)
-
-		pushed = append(pushed, image)
 
 	}
 	return pushed, err
