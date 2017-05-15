@@ -13,12 +13,11 @@ var dryrun bool
 
 // utility functions
 func LogError(err error) {
-	s := strings.TrimSpace(err.Error())
-	log.Printf("ERROR: %v", s)
+	log.Printf("error: %v\n", strings.TrimSpace(err.Error()))
 }
 
 func LogDebug(c *cli.Context, s string) {
 	if c.GlobalBool("debug") {
-		log.Printf("DEBUG: %v\n", strings.TrimSpace(s))
+		log.Printf("debug: %v\n", strings.TrimSpace(s))
 	}
 }
