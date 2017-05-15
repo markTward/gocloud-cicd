@@ -78,7 +78,7 @@ func deploy(c *cli.Context) error {
 
 	LogDebug(c, fmt.Sprintf("Config: %#v", cfg))
 
-	// initialize active registry indicated by config
+	// initialize active Registry indicated by config and assert as Registrator
 	var activeRegistry interface{}
 	var err error
 	if activeRegistry, err = cfg.GetActiveRegistry(); err != nil {
@@ -93,7 +93,7 @@ func deploy(c *cli.Context) error {
 		return err
 	}
 
-	// initialize active registry indicated by config
+	// initialize active CD provider indicated by config and assert as Deployer
 	var activeCDProvider interface{}
 	if activeCDProvider, err = cfg.GetActiveCDProvider(); err != nil {
 		LogError(err)
@@ -121,35 +121,34 @@ func deploy(c *cli.Context) error {
 		args = append(args, "--dry-run")
 	}
 
-	// acquire runtime values filename
-	var vf *os.File
-
-	// use defined output file when defined.  otherwise create/remove a TempFile
+	// write runtime helm --values <file> using when available in config  otherwise create/remove a TempFile
+	outFile := cfg.Workflow.CDProvider.Helm.Options.Values.Output
+	var valuesFile *os.File
 	switch {
-	case cfg.Workflow.CDProvider.Helm.Options.Values.Output == "":
-		vf, err = ioutil.TempFile("", "runtime_values.yaml")
+	case outFile == "":
+		valuesFile, err = ioutil.TempFile("", "runtime_values.yaml.")
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer os.Remove(vf.Name())
+		defer os.Remove(valuesFile.Name())
 	default:
-		vf, err = os.Create(cfg.Workflow.CDProvider.Helm.Options.Values.Output)
+		valuesFile, err = os.Create(outFile)
 		if err != nil {
 			return err
 		}
-		defer vf.Close()
+		defer valuesFile.Close()
 	}
 
-	LogDebug(c, fmt.Sprintf("helm dynamic values file: %v", vf.Name()))
+	LogDebug(c, fmt.Sprintf("helm runtime values filename: %v", valuesFile.Name()))
 
 	// render values file from template
-	err = renderHelmValuesFile(c, &cfg, vf, containerRepo, buildTag)
+	err = renderHelmValuesFile(c, &cfg, valuesFile, containerRepo, buildTag)
 	if err != nil {
 		return fmt.Errorf("renderHelmValuesFile(): %v", err)
 	}
 
 	// join flags and positional args
-	args = append(args, "--values", vf.Name())
+	args = append(args, "--values", valuesFile.Name())
 	args = append(args, chartPath)
 
 	// deploy using active CD provider
@@ -160,7 +159,7 @@ func deploy(c *cli.Context) error {
 	return err
 }
 
-func renderHelmValuesFile(c *cli.Context, cfg *config.Config, vf *os.File, repo string, tag string) error {
+func renderHelmValuesFile(c *cli.Context, cfg *config.Config, valuesFile *os.File, repo string, tag string) error {
 	type Values struct {
 		Repo, Tag, ServiceType string
 	}
@@ -176,12 +175,10 @@ func renderHelmValuesFile(c *cli.Context, cfg *config.Config, vf *os.File, repo 
 	}
 
 	// render the template
-	LogDebug(c, fmt.Sprintf("output file before exec: %v", vf.Name()))
-	log.Println()
-	err = t.Execute(vf, values)
+	err = t.Execute(valuesFile, values)
 
 	// verify rendered file contents
-	yaml, err := ioutil.ReadFile(vf.Name())
+	yaml, err := ioutil.ReadFile(valuesFile.Name())
 	if err != nil {
 		log.Println("error read yaml:", err)
 		return err

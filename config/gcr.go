@@ -78,8 +78,9 @@ func (gcr *GCR) Push(images []string) (pushed []string, err error) {
 }
 
 func (r *GCR) IsRegistryValid() (err error) {
+	// TODO: check existence of other required field and/or remove unnecessary (host, account/project, repo)
 	if r.Url == "" {
-		err = fmt.Errorf("url missing from %v configuration", r.Description)
+		err = fmt.Errorf("registry url missing from %v configuration", r.Description)
 	}
 	return err
 }

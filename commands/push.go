@@ -72,7 +72,7 @@ func push(c *cli.Context) error {
 
 	LogDebug(c, fmt.Sprintf("Config: %#v", cfg))
 
-	// initialize active registry indicated by config
+	// initialize active Registry indicated by config and assert as Registrator
 	var activeRegistry interface{}
 	var err error
 	if activeRegistry, err = cfg.GetActiveRegistry(); err != nil {
@@ -95,7 +95,8 @@ func push(c *cli.Context) error {
 
 	// make list of images to tag
 	var images []string
-	if images, err = makeTagList(ar.GetRepoURL(), baseImage, event, branch, pr); err != nil {
+	if images = makeTagList(c, ar.GetRepoURL(), baseImage, event, branch, pr); len(images) == 0 {
+		fmt.Errorf("no images to tag: ", images)
 		LogError(err)
 		return err
 	}
@@ -118,9 +119,9 @@ func push(c *cli.Context) error {
 	return err
 }
 
-func makeTagList(repoURL string, refImage string, event string, branch string, pr string) (images []string, err error) {
+func makeTagList(c *cli.Context, repoURL string, refImage string, event string, branch string, pr string) (images []string) {
 
-	log.Println("Tagger args:", repoURL, refImage, event, branch, pr)
+	LogDebug(c, fmt.Sprintf("makeTagList args: repo url: %v, image: %v, event type: %v, branch: %v, pull request id: %v", repoURL, refImage, event, branch, pr))
 
 	// tag additional images based on build event type
 	tagSep := strings.Index(refImage, ":")
@@ -138,7 +139,7 @@ func makeTagList(repoURL string, refImage string, event string, branch string, p
 		images = append(images, repoURL+":PR-"+pr)
 	}
 
-	return images, err
+	return images
 }
 
 func tagImages(src string, targets []string) (err error) {
