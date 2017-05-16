@@ -2,14 +2,12 @@ package commands
 
 import (
 	"fmt"
-	"html/template"
-	"io/ioutil"
-	"log"
 	"os"
+	"strings"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/markTward/gocloud-cicd/config"
-	"gopkg.in/urfave/cli.v1"
+	"github.com/urfave/cli"
 )
 
 var buildTag, containerRepo, serviceName, namespace, chartPath string
@@ -63,21 +61,29 @@ var DeployCmd = cli.Command{
 	Action: deploy,
 }
 
-func deploy(c *cli.Context) error {
+func deploy(ctx *cli.Context) error {
 
-	LogDebug(c,
-		fmt.Sprintf("flag values: --config %v, --tag %v, -branch %v, --repo %v,--service %v, --namespace %v, --chartpath %v --debug %v, --dryrun %v",
-			configFile, buildTag, branch, containerRepo, serviceName, namespace, chartPath, c.GlobalBool("debug"), dryrun))
+	var flagValues []string
+	for i := 0; i < len(ctx.FlagNames()); i++ {
+		flag := ctx.FlagNames()[i]
+		value := "\"\""
+		if ctx.IsSet(flag) {
+			value = ctx.String(flag)
+		}
+		flagValues = append(flagValues, "--"+flag, value)
+	}
+
+	LogDebug(ctx, strings.Join(flagValues, " "))
 
 	// initialize configuration object
 	cfg := config.New()
 	if err := config.Load(configFile, &cfg); err != nil {
-		LogDebug(c, "config error?")
+		LogDebug(ctx, "config error?")
 		LogError(err)
 		return err
 	}
 
-	LogDebug(c, fmt.Sprintf("%v", spew.Sdump(cfg)))
+	LogDebug(ctx, fmt.Sprintf("%v", spew.Sdump(cfg)))
 
 	// initialize active Registry indicated by config and assert as Registrator
 	var activeRegistry interface{}
@@ -89,7 +95,7 @@ func deploy(c *cli.Context) error {
 	}
 	ar := activeRegistry.(config.Registrator)
 
-	if err = validateDeployArgs(c, &cfg, ar); err != nil {
+	if err = validateDeployArgs(ctx, &cfg, ar); err != nil {
 		LogError(err)
 		return err
 	}
@@ -102,96 +108,15 @@ func deploy(c *cli.Context) error {
 	}
 	ad := activeCDProvider.(config.Deployer)
 
-	// TODO: pass args and move logic to helm.Deploy method
-	release := serviceName + "-" + branch
-
-	// helm required flags
-	args := []string{"--install", release, "--namespace", namespace}
-
-	// config file boolean flags
-	for _, flag := range cfg.Workflow.CDProvider.Helm.Options.Flags {
-		args = append(args, flag)
-	}
-
-	// cli flag conversion
-	if c.GlobalBool("debug") {
-		args = append(args, "--debug")
-	}
-
-	// convert cicd --dryrun arg to helm dialect
-	if dryrun {
-		args = append(args, "--dry-run")
-	}
-
-	// write runtime helm --values <file> using when available in config  otherwise create/remove a TempFile
-	outFile := cfg.Workflow.CDProvider.Helm.Options.Values.Output
-	var valuesFile *os.File
-	switch {
-	case outFile == "":
-		valuesFile, err = ioutil.TempFile("", "runtime_values.yaml.")
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer os.Remove(valuesFile.Name())
-	default:
-		valuesFile, err = os.Create(outFile)
-		if err != nil {
-			return err
-		}
-		defer valuesFile.Close()
-	}
-
-	LogDebug(c, fmt.Sprintf("helm runtime values filename: %v", valuesFile.Name()))
-
-	// render values file from template
-	err = renderHelmValuesFile(c, &cfg, valuesFile, containerRepo, buildTag)
-	if err != nil {
-		return fmt.Errorf("renderHelmValuesFile(): %v", err)
-	}
-
-	// join flags and positional args
-	args = append(args, "--values", valuesFile.Name())
-	args = append(args, chartPath)
-
 	// deploy using active CD provider
-	if err = ad.Deploy(&cfg, args); err != nil {
+	if err = ad.Deploy(ctx, &cfg); err != nil {
 		LogError(err)
 	}
 
 	return err
 }
 
-func renderHelmValuesFile(c *cli.Context, cfg *config.Config, valuesFile *os.File, repo string, tag string) error {
-	type Values struct {
-		Repo, Tag, ServiceType string
-	}
-
-	// Prepare some data to insert into the template.
-	var values = Values{Repo: repo, Tag: tag}
-
-	// initialize the template
-	var t *template.Template
-	var err error
-	if t, err = template.ParseFiles(cfg.Workflow.CDProvider.Helm.Options.Values.Template); err != nil {
-		return err
-	}
-
-	// render the template
-	err = t.Execute(valuesFile, values)
-
-	// verify rendered file contents
-	yaml, err := ioutil.ReadFile(valuesFile.Name())
-	if err != nil {
-		log.Println("error read yaml:", err)
-		return err
-	}
-
-	log.Println(string(yaml))
-
-	return err
-}
-
-func validateDeployArgs(c *cli.Context, cfg *config.Config, ar config.Registrator) (err error) {
+func validateDeployArgs(ctx *cli.Context, cfg *config.Config, ar config.Registrator) (err error) {
 
 	if buildTag == "" {
 		err = fmt.Errorf("%v", "build tag a required value")
@@ -221,7 +146,7 @@ func validateDeployArgs(c *cli.Context, cfg *config.Config, ar config.Registrato
 	}
 
 	if isNotExist(chartPath) {
-		LogDebug(c, fmt.Sprintf("is not exist chartpath: %v", chartPath))
+		LogDebug(ctx, fmt.Sprintf("is not exist chartpath: %v", chartPath))
 		err = fmt.Errorf("chart path invalid: %v", chartPath)
 		return err
 	}

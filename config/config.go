@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/urfave/cli"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -65,7 +66,7 @@ type Registrator interface {
 }
 
 type Deployer interface {
-	Deploy(*Config, []string) error
+	Deploy(*cli.Context, *Config) error
 }
 
 func New() Config {

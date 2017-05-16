@@ -9,7 +9,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/markTward/gocloud-cicd/config"
-	"gopkg.in/urfave/cli.v1"
+	"github.com/urfave/cli"
 )
 
 var event, baseImage, pr string
@@ -54,12 +54,12 @@ var PushCmd = cli.Command{
 	Action: push,
 }
 
-func push(c *cli.Context) error {
+func push(ctx *cli.Context) error {
 
-	LogDebug(c, fmt.Sprintf("flag values: --config %v, --branch %v, --image %v, --event %v, --pr %v --debug %v, --dryrun %v",
-		configFile, branch, baseImage, event, pr, c.GlobalBool("debug"), dryrun))
+	LogDebug(ctx, fmt.Sprintf("flag values: --config %v, --branch %v, --image %v, --event %v, --pr %v --debug %v, --dryrun %v",
+		configFile, branch, baseImage, event, pr, ctx.GlobalBool("debug"), dryrun))
 
-	if err := validatePushArgs(c); err != nil {
+	if err := validatePushArgs(); err != nil {
 		LogError(err)
 		return err
 	}
@@ -71,7 +71,7 @@ func push(c *cli.Context) error {
 		return err
 	}
 
-	LogDebug(c, fmt.Sprintf("%v", spew.Sdump(cfg)))
+	LogDebug(ctx, fmt.Sprintf("%v", spew.Sdump(cfg)))
 
 	// initialize active Registry indicated by config and assert as Registrator
 	var activeRegistry interface{}
@@ -96,7 +96,7 @@ func push(c *cli.Context) error {
 
 	// make list of images to tag
 	var images []string
-	if images = makeTagList(c, ar.GetRepoURL(), baseImage, event, branch, pr); len(images) == 0 {
+	if images = makeTagList(ctx, ar.GetRepoURL(), baseImage, event, branch, pr); len(images) == 0 {
 		fmt.Errorf("no images to tag: ", images)
 		LogError(err)
 		return err
@@ -119,9 +119,9 @@ func push(c *cli.Context) error {
 	return err
 }
 
-func makeTagList(c *cli.Context, repoURL string, refImage string, event string, branch string, pr string) (images []string) {
+func makeTagList(ctx *cli.Context, repoURL string, refImage string, event string, branch string, pr string) (images []string) {
 
-	LogDebug(c, fmt.Sprintf("makeTagList args: repo url: %v, image: %v, event type: %v, branch: %v, pull request id: %v", repoURL, refImage, event, branch, pr))
+	LogDebug(ctx, fmt.Sprintf("makeTagList args: repo url: %v, image: %v, event type: %v, branch: %v, pull request id: %v", repoURL, refImage, event, branch, pr))
 
 	// tag additional images based on build event type
 	tagSep := strings.Index(refImage, ":")
@@ -159,7 +159,7 @@ func tagImages(src string, targets []string) (err error) {
 	return err
 }
 
-func validatePushArgs(c *cli.Context) (err error) {
+func validatePushArgs() (err error) {
 	switch {
 	case baseImage == "":
 		err = fmt.Errorf("%v", "build image a required value; use --image option")

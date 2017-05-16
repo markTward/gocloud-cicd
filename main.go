@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/markTward/gocloud-cicd/commands"
-	"gopkg.in/urfave/cli.v1"
+	"github.com/urfave/cli"
 )
 
 func main() {
