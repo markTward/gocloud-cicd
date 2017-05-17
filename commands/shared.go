@@ -21,3 +21,19 @@ func LogDebug(ctx *cli.Context, s string) {
 		log.Printf("debug: %v\n", strings.TrimSpace(s))
 	}
 }
+
+func getAllFlags(ctx *cli.Context) map[string]string {
+	flagValues := make(map[string]string)
+	for i := 0; i < len(ctx.GlobalFlagNames()); i++ {
+		flag := ctx.GlobalFlagNames()[i]
+		value := ctx.GlobalString(flag)
+		flagValues[flag] = value
+	}
+
+	for i := 0; i < len(ctx.FlagNames()); i++ {
+		flag := ctx.FlagNames()[i]
+		value := ctx.String(flag)
+		flagValues[flag] = value
+	}
+	return flagValues
+}

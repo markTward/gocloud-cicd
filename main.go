@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"sort"
 
 	"github.com/markTward/gocloud-cicd/commands"
 	"github.com/urfave/cli"
@@ -32,5 +33,12 @@ func main() {
 		commands.PushCmd,
 	}
 
+	sort.Sort(cli.CommandsByName(app.Commands))
+
+	sort.Sort(cli.FlagsByName(app.Flags))
+	sort.Sort(cli.FlagsByName(commands.DeployCmd.Flags))
+	sort.Sort(cli.FlagsByName(commands.PushCmd.Flags))
+
 	app.Run(os.Args)
+
 }

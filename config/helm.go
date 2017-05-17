@@ -31,8 +31,7 @@ type Helm struct {
 
 func (h *Helm) Deploy(ctx *cli.Context, cfg *Config) (err error) {
 
-	// TODO: release construction should be project specific rule.  relocate to values file?
-	// derive helm release
+	// TODO: release construction should be project specific rule.  config rules?
 	release := ctx.String("service") + "-" + ctx.String("branch")
 
 	// helm required flags

@@ -2,8 +2,8 @@ package commands
 
 import (
 	"fmt"
+	"log"
 	"os"
-	"strings"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/markTward/gocloud-cicd/config"
@@ -63,18 +63,6 @@ var DeployCmd = cli.Command{
 
 func deploy(ctx *cli.Context) error {
 
-	var flagValues []string
-	for i := 0; i < len(ctx.FlagNames()); i++ {
-		flag := ctx.FlagNames()[i]
-		value := "\"\""
-		if ctx.IsSet(flag) {
-			value = ctx.String(flag)
-		}
-		flagValues = append(flagValues, "--"+flag, value)
-	}
-
-	LogDebug(ctx, strings.Join(flagValues, " "))
-
 	// initialize configuration object
 	cfg := config.New()
 	if err := config.Load(configFile, &cfg); err != nil {
@@ -82,7 +70,6 @@ func deploy(ctx *cli.Context) error {
 		LogError(err)
 		return err
 	}
-
 	LogDebug(ctx, fmt.Sprintf("%v", spew.Sdump(cfg)))
 
 	// initialize active Registry indicated by config and assert as Registrator
@@ -91,16 +78,17 @@ func deploy(ctx *cli.Context) error {
 	if activeRegistry, err = cfg.GetActiveRegistry(); err != nil {
 		LogError(err)
 		return err
-
 	}
 	ar := activeRegistry.(config.Registrator)
 
+	// validate args and apply defaults
 	if err = validateDeployArgs(ctx, &cfg, ar); err != nil {
 		LogError(err)
 		return err
 	}
+	log.Println("deploy args with default values:", getAllFlags(ctx))
 
-	// initialize active CD provider indicated by config and assert as Deployer
+	// get active CD provider indicated by config and assert as Deployer
 	var activeCDProvider interface{}
 	if activeCDProvider, err = cfg.GetActiveCDProvider(); err != nil {
 		LogError(err)

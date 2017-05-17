@@ -56,13 +56,11 @@ var PushCmd = cli.Command{
 
 func push(ctx *cli.Context) error {
 
-	LogDebug(ctx, fmt.Sprintf("flag values: --config %v, --branch %v, --image %v, --event %v, --pr %v --debug %v, --dryrun %v",
-		configFile, branch, baseImage, event, pr, ctx.GlobalBool("debug"), dryrun))
-
 	if err := validatePushArgs(); err != nil {
 		LogError(err)
 		return err
 	}
+	log.Println("push args with default values:", getAllFlags(ctx))
 
 	// initialize configuration object
 	cfg := config.New()
