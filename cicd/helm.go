@@ -29,7 +29,7 @@ type Helm struct {
 	}
 }
 
-func (h *Helm) Deploy(ctx *cli.Context, cfg *Config) (err error) {
+func (h *Helm) Deploy(ctx *cli.Context, wf *Workflow) (err error) {
 
 	// TODO: release construction should be project specific rule.  config rules?
 	release := ctx.String("service") + "-" + ctx.String("branch")
@@ -38,7 +38,7 @@ func (h *Helm) Deploy(ctx *cli.Context, cfg *Config) (err error) {
 	args := []string{"--install", release, "--namespace", ctx.String("namespace")}
 
 	// config file boolean flags
-	for _, flag := range cfg.Workflow.CDProvider.Helm.Options.Flags {
+	for _, flag := range wf.Providers.CDProvider.Helm.Options.Flags {
 		args = append(args, flag)
 	}
 
@@ -53,7 +53,7 @@ func (h *Helm) Deploy(ctx *cli.Context, cfg *Config) (err error) {
 	}
 
 	// write runtime helm --values <file> using when available in config  otherwise create/remove a TempFile
-	outFile := cfg.Workflow.CDProvider.Helm.Options.Values.Output
+	outFile := wf.Providers.CDProvider.Helm.Options.Values.Output
 	var valuesFile *os.File
 	switch {
 	case outFile == "":
@@ -71,7 +71,7 @@ func (h *Helm) Deploy(ctx *cli.Context, cfg *Config) (err error) {
 	}
 
 	// render values file from template
-	err = renderHelmValuesFile(ctx, cfg, valuesFile, ctx.String("repo"), ctx.String("tag"))
+	err = renderHelmValuesFile(ctx, wf, valuesFile, ctx.String("repo"), ctx.String("tag"))
 	if err != nil {
 		return fmt.Errorf("renderHelmValuesFile(): %v", err)
 	}
@@ -100,7 +100,7 @@ func (h *Helm) Deploy(ctx *cli.Context, cfg *Config) (err error) {
 	return err
 }
 
-func renderHelmValuesFile(c *cli.Context, cfg *Config, valuesFile *os.File, repo string, tag string) error {
+func renderHelmValuesFile(c *cli.Context, wf *Workflow, valuesFile *os.File, repo string, tag string) error {
 	type Values struct {
 		Repo, Tag, ServiceType string
 	}
@@ -111,7 +111,7 @@ func renderHelmValuesFile(c *cli.Context, cfg *Config, valuesFile *os.File, repo
 	// initialize the template
 	var t *template.Template
 	var err error
-	if t, err = template.ParseFiles(cfg.Workflow.CDProvider.Helm.Options.Values.Template); err != nil {
+	if t, err = template.ParseFiles(wf.Providers.CDProvider.Helm.Options.Values.Template); err != nil {
 		return err
 	}
 

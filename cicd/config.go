@@ -10,18 +10,24 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-type Config struct {
+type Workflow struct {
+	Config
 	App
-	Github
 	Registry
-	Workflow
+	Providers
+}
+
+type Config struct {
+	Enabled  bool
+	Provider struct {
+		CI       string
+		CD       string
+		Registry string
+	}
 }
 
 type App struct {
 	Name string
-}
-
-type Github struct {
 	Repo string
 }
 
@@ -30,16 +36,7 @@ type Registry struct {
 	Docker
 }
 
-type Workflow struct {
-	Enabled bool
-
-	// provider ids
-	Provider struct {
-		CI       string
-		CD       string
-		Registry string
-	}
-
+type Providers struct {
 	Github struct {
 		Repo   string
 		Branch string
@@ -66,45 +63,45 @@ type Registrator interface {
 }
 
 type Deployer interface {
-	Deploy(*cli.Context, *Config) error
+	Deploy(*cli.Context, *Workflow) error
 }
 
-func New() Config {
-	return Config{}
+func New() Workflow {
+	return Workflow{}
 }
 
-func Load(cf string, cfg *Config) error {
+func Load(cf string, wf *Workflow) error {
 	// read in config yaml file
 	yamlInput, err := ioutil.ReadFile(cf)
 	if err != nil {
 		return err
 	}
 
-	// parse yaml into Config object
-	err = yaml.Unmarshal([]byte(yamlInput), &cfg)
+	// parse yaml into Workflow object
+	err = yaml.Unmarshal([]byte(yamlInput), &wf)
 	return err
 
 }
 
-func (cfg *Config) GetActiveRegistry() (activeRegistry interface{}, err error) {
-	switch cfg.Workflow.Provider.Registry {
+func (wf *Workflow) GetActiveRegistry() (activeRegistry interface{}, err error) {
+	switch wf.Config.Provider.Registry {
 	case "gcr":
-		activeRegistry = &cfg.Registry.GCR
+		activeRegistry = &wf.Registry.GCR
 	case "docker":
-		activeRegistry = &cfg.Registry.Docker
+		activeRegistry = &wf.Registry.Docker
 	default:
-		err = fmt.Errorf("unknown workflow registry: <%v>", cfg.Workflow.Provider.Registry)
+		err = fmt.Errorf("unknown workflow registry: <%v>", wf.Config.Provider.Registry)
 		log.Println(err)
 	}
 	return activeRegistry, err
 }
 
-func (cfg *Config) GetActiveCDProvider() (activeCD interface{}, err error) {
-	switch cfg.Workflow.Provider.CD {
+func (wf *Workflow) GetActiveCDProvider() (activeCD interface{}, err error) {
+	switch wf.Config.Provider.CD {
 	case "helm":
-		activeCD = &cfg.CDProvider.Helm
+		activeCD = &wf.CDProvider.Helm
 	default:
-		err = fmt.Errorf("unknown workflow CD provider: <%v>", cfg.Workflow.Provider.CD)
+		err = fmt.Errorf("unknown workflow CD provider: <%v>", wf.Config.Provider.CD)
 		log.Println(err)
 	}
 	return activeCD, err

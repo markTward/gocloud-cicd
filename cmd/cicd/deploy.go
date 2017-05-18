@@ -64,24 +64,24 @@ var deployCmd = cli.Command{
 func deploy(ctx *cli.Context) error {
 
 	// initialize configuration object
-	cfg := cicd.New()
-	if err := cicd.Load(configFile, &cfg); err != nil {
+	wf := cicd.New()
+	if err := cicd.Load(configFile, &wf); err != nil {
 		logError(err)
 		return err
 	}
-	logDebug(ctx, fmt.Sprintf("%v", spew.Sdump(cfg)))
+	logDebug(ctx, fmt.Sprintf("%v", spew.Sdump(wf)))
 
 	// initialize active Registry indicated by config and assert as Registrator
 	var activeRegistry interface{}
 	var err error
-	if activeRegistry, err = cfg.GetActiveRegistry(); err != nil {
+	if activeRegistry, err = wf.GetActiveRegistry(); err != nil {
 		logError(err)
 		return err
 	}
 	ar := activeRegistry.(cicd.Registrator)
 
 	// validate args and apply defaults
-	if err = validateDeployArgs(ctx, &cfg, ar); err != nil {
+	if err = validateDeployArgs(ctx, &wf, ar); err != nil {
 		logError(err)
 		return err
 	}
@@ -89,21 +89,21 @@ func deploy(ctx *cli.Context) error {
 
 	// get active CD provider indicated by config and assert as Deployer
 	var activeCDProvider interface{}
-	if activeCDProvider, err = cfg.GetActiveCDProvider(); err != nil {
+	if activeCDProvider, err = wf.GetActiveCDProvider(); err != nil {
 		logError(err)
 		return err
 	}
 	ad := activeCDProvider.(cicd.Deployer)
 
 	// deploy using active CD provider
-	if err = ad.Deploy(ctx, &cfg); err != nil {
+	if err = ad.Deploy(ctx, &wf); err != nil {
 		logError(err)
 	}
 
 	return err
 }
 
-func validateDeployArgs(ctx *cli.Context, cfg *cicd.Config, ar cicd.Registrator) (err error) {
+func validateDeployArgs(ctx *cli.Context, wf *cicd.Workflow, ar cicd.Registrator) (err error) {
 
 	if buildTag == "" {
 		err = fmt.Errorf("%v", "build tag a required value")
@@ -115,7 +115,7 @@ func validateDeployArgs(ctx *cli.Context, cfg *cicd.Config, ar cicd.Registrator)
 	}
 
 	if namespace == "" {
-		if ns := cfg.Workflow.CDProvider.Helm.Namespace; ns == "" {
+		if ns := wf.Providers.CDProvider.Helm.Namespace; ns == "" {
 			err = fmt.Errorf("%v", "namespace required when not defined in cicd.yaml")
 			return err
 		} else {
@@ -124,7 +124,7 @@ func validateDeployArgs(ctx *cli.Context, cfg *cicd.Config, ar cicd.Registrator)
 	}
 
 	if chartPath == "" {
-		if cp := cfg.Workflow.CDProvider.Helm.Chartpath; cp == "" {
+		if cp := wf.Providers.CDProvider.Helm.Chartpath; cp == "" {
 			err = fmt.Errorf("%v", "chart path required when not defined in cicd.yaml")
 			return err
 		} else {
@@ -148,7 +148,7 @@ func validateDeployArgs(ctx *cli.Context, cfg *cicd.Config, ar cicd.Registrator)
 	}
 
 	if serviceName == "" {
-		if svc := cfg.App.Name; svc == "" {
+		if svc := wf.App.Name; svc == "" {
 			err = fmt.Errorf("%v", "service name required when not defined in cicd.yaml")
 			return err
 		} else {
