@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/markTward/gocloud-cicd/config"
+	"github.com/markTward/gocloud-cicd/cicd"
 	"github.com/urfave/cli"
 )
 
@@ -63,8 +63,8 @@ func push(ctx *cli.Context) error {
 	log.Println("push command args:", getAllFlags(ctx))
 
 	// initialize configuration object
-	cfg := config.New()
-	if err := config.Load(configFile, &cfg); err != nil {
+	cfg := cicd.New()
+	if err := cicd.Load(configFile, &cfg); err != nil {
 		logError(err)
 		return err
 	}
@@ -78,7 +78,7 @@ func push(ctx *cli.Context) error {
 		logError(err)
 		return err
 	}
-	ar := activeRegistry.(config.Registrator)
+	ar := activeRegistry.(cicd.Registrator)
 
 	// validate registry has required values
 	if err := ar.IsRegistryValid(); err != nil {
@@ -95,8 +95,7 @@ func push(ctx *cli.Context) error {
 	// make list of images to tag
 	var images []string
 	if images = makeTagList(ctx, ar.GetRepoURL(), baseImage, event, branch, pr); len(images) == 0 {
-		fmt.Errorf("no images to tag: ", images)
-		logError(err)
+		logError(fmt.Errorf("no images to tag: %v", images))
 		return err
 	}
 

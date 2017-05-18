@@ -1,4 +1,4 @@
-package config
+package cicd
 
 type GKE struct {
 	Name        string

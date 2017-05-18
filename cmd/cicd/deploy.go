@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/markTward/gocloud-cicd/config"
+	"github.com/markTward/gocloud-cicd/cicd"
 	"github.com/urfave/cli"
 )
 
@@ -64,8 +64,8 @@ var deployCmd = cli.Command{
 func deploy(ctx *cli.Context) error {
 
 	// initialize configuration object
-	cfg := config.New()
-	if err := config.Load(configFile, &cfg); err != nil {
+	cfg := cicd.New()
+	if err := cicd.Load(configFile, &cfg); err != nil {
 		logError(err)
 		return err
 	}
@@ -78,7 +78,7 @@ func deploy(ctx *cli.Context) error {
 		logError(err)
 		return err
 	}
-	ar := activeRegistry.(config.Registrator)
+	ar := activeRegistry.(cicd.Registrator)
 
 	// validate args and apply defaults
 	if err = validateDeployArgs(ctx, &cfg, ar); err != nil {
@@ -93,7 +93,7 @@ func deploy(ctx *cli.Context) error {
 		logError(err)
 		return err
 	}
-	ad := activeCDProvider.(config.Deployer)
+	ad := activeCDProvider.(cicd.Deployer)
 
 	// deploy using active CD provider
 	if err = ad.Deploy(ctx, &cfg); err != nil {
@@ -103,7 +103,7 @@ func deploy(ctx *cli.Context) error {
 	return err
 }
 
-func validateDeployArgs(ctx *cli.Context, cfg *config.Config, ar config.Registrator) (err error) {
+func validateDeployArgs(ctx *cli.Context, cfg *cicd.Config, ar cicd.Registrator) (err error) {
 
 	if buildTag == "" {
 		err = fmt.Errorf("%v", "build tag a required value")
