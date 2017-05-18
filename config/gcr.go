@@ -12,6 +12,7 @@ import (
 type GCR struct {
 	Name        string
 	Description string
+	Enabled     bool
 	Host        string
 	Project     string
 	Repo        string
@@ -49,7 +50,7 @@ func (r *GCR) Authenticate() (err error) {
 
 }
 
-func (gcr *GCR) Push(images []string) (pushed []string, err error) {
+func (gcr *GCR) Push(images []string, isDryrun bool) (pushed []string, err error) {
 	var stderr bytes.Buffer
 	var cmdOut []byte
 	// IDEA: could use single command to push all repo images: gcloud docker -- push gcr.io/k8sdemo-159622/gocloud
@@ -59,26 +60,29 @@ func (gcr *GCR) Push(images []string) (pushed []string, err error) {
 		cmd := exec.Command("gcloud", "docker", "--", "push", image)
 		cmd.Stderr = &stderr
 
-		// TODO: add --dry-run flag conditional logic
-		log.Println(strings.Join(cmd.Args, " "))
+		if !isDryrun {
+			log.Println("execute: ", strings.Join(cmd.Args, " "))
 
-		if cmdOut, err = cmd.Output(); err != nil {
-			logCmdOutput(stderr.Bytes())
-			err = fmt.Errorf("%v: %v", image, stderr.String())
-			break
+			if cmdOut, err = cmd.Output(); err != nil {
+				logCmdOutput(stderr.Bytes())
+				err = fmt.Errorf("%v: %v", image, stderr.String())
+				break
+			}
+			pushed = append(pushed, image)
+			logCmdOutput(cmdOut)
+
+		} else {
+			log.Println("dryrun: ", strings.Join(cmd.Args, " "))
 		}
-
-		logCmdOutput(cmdOut)
-
-		pushed = append(pushed, image)
 
 	}
 	return pushed, err
 }
 
 func (r *GCR) IsRegistryValid() (err error) {
+	// TODO: check existence of other required field and/or remove unnecessary (host, account/project, repo)
 	if r.Url == "" {
-		err = fmt.Errorf("url missing from %v configuration", r.Description)
+		err = fmt.Errorf("registry url missing from %v configuration", r.Description)
 	}
 	return err
 }

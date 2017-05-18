@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/urfave/cli"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -32,21 +33,25 @@ type Registry struct {
 type Workflow struct {
 	Enabled bool
 
+	// provider ids
+	Provider struct {
+		CI       string
+		CD       string
+		Registry string
+	}
+
 	Github struct {
 		Repo   string
 		Branch string
 	}
 
 	CIProvider struct {
-		Name string
-		Plan string
+		Travis
 	}
 
 	Platform struct {
 		GKE
 	}
-
-	Registry string
 
 	CDProvider struct {
 		Helm
@@ -55,13 +60,13 @@ type Workflow struct {
 
 type Registrator interface {
 	IsRegistryValid() error
-	Push([]string) ([]string, error)
+	Push([]string, bool) ([]string, error)
 	Authenticate() error
 	GetRepoURL() string
 }
 
 type Deployer interface {
-	Deploy(Config)
+	Deploy(*cli.Context, *Config) error
 }
 
 func New() Config {
@@ -82,16 +87,27 @@ func Load(cf string, cfg *Config) error {
 }
 
 func (cfg *Config) GetActiveRegistry() (activeRegistry interface{}, err error) {
-	switch cfg.Workflow.Registry {
+	switch cfg.Workflow.Provider.Registry {
 	case "gcr":
 		activeRegistry = &cfg.Registry.GCR
 	case "docker":
 		activeRegistry = &cfg.Registry.Docker
 	default:
-		log.Println("unknown registry")
-		err = fmt.Errorf("unknown workflow registry: <%v>", cfg.Workflow.Registry)
+		err = fmt.Errorf("unknown workflow registry: <%v>", cfg.Workflow.Provider.Registry)
+		log.Println(err)
 	}
 	return activeRegistry, err
+}
+
+func (cfg *Config) GetActiveCDProvider() (activeCD interface{}, err error) {
+	switch cfg.Workflow.Provider.CD {
+	case "helm":
+		activeCD = &cfg.CDProvider.Helm
+	default:
+		err = fmt.Errorf("unknown workflow CD provider: <%v>", cfg.Workflow.Provider.CD)
+		log.Println(err)
+	}
+	return activeCD, err
 }
 
 func logCmdOutput(cmdOut []byte) {

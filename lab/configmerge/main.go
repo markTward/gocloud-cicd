@@ -7,74 +7,43 @@ import (
 	"os"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
+	"github.com/markTward/gocloud-cicd/config"
+
 	yaml "gopkg.in/yaml.v2"
 )
 
-type Config struct {
-	App
-	Github
-	Workflow
-	Registry
-}
-
-type App struct {
-	Name string
-}
-type Github struct {
-	Repo string
-}
-
-type Registry struct {
-	GCR
-	Docker
-}
-
-type GCR struct {
-	Name        string
-	Description string
-	Host        string
-	Project     string
-	Repo        string
-	Url         string
-	KeyFile     string
-}
-
-type Docker struct {
-	Name        string
-	Description string
-	Host        string
-	Account     string
-	Repo        string
-	Url         string
-}
-
-type Workflow struct {
-	Enabled bool
-
-	Github struct {
-		Repo   string
-		Branch string
+func main() {
+	// read in project config file
+	yamlInput, err := ioutil.ReadFile("../../../gocloud/cicd.yaml")
+	if err != nil {
+		exitScript(err, true)
 	}
 
-	CIProvider struct {
-		Name string
-		Plan string
+	// parse yaml into Config object
+	cfg := config.Config{}
+	err = yaml.Unmarshal([]byte(yamlInput), &cfg)
+	if err != nil {
+		exitScript(err, true)
 	}
 
-	Platform struct {
-		Name    string
-		Project string
-		Cluster string
-	}
+	// spew.Dump(cfg)
+	// log.Println()
+	log.Println(fmt.Sprintf("Config: %v", spew.Sdump(cfg)))
 
-	Registry string
-
-	CDProvider struct {
-		Name      string
-		Release   string
-		Namespace string
-		ChartDir  string
-	}
+	// fmt.Println("Default APP:", cfg.App.Name)
+	// yamlInput, err = ioutil.ReadFile("./cicduser.yaml")
+	// if err != nil {
+	// 	exitScript(err, true)
+	// }
+	//
+	// err = yaml.Unmarshal([]byte(yamlInput), &cfg)
+	// if err != nil {
+	// 	exitScript(err, true)
+	// }
+	//
+	// fmt.Println("User APP:", cfg.App.Name)
+	// fmt.Printf("Config: %v\n", cfg)
 }
 
 func exitScript(err error, exit bool) {
@@ -84,33 +53,4 @@ func exitScript(err error, exit bool) {
 		fmt.Fprintf(os.Stderr, "error: %v\n", s)
 		os.Exit(1)
 	}
-}
-
-func main() {
-	// read in project config file
-	yamlInput, err := ioutil.ReadFile("./cicddefault.yaml")
-	if err != nil {
-		exitScript(err, true)
-	}
-
-	// parse yaml into Config object
-	cfg := Config{}
-	err = yaml.Unmarshal([]byte(yamlInput), &cfg)
-	if err != nil {
-		exitScript(err, true)
-	}
-
-	fmt.Println("Default APP:", cfg.App.Name)
-	yamlInput, err = ioutil.ReadFile("./cicduser.yaml")
-	if err != nil {
-		exitScript(err, true)
-	}
-
-	err = yaml.Unmarshal([]byte(yamlInput), &cfg)
-	if err != nil {
-		exitScript(err, true)
-	}
-
-	fmt.Println("User APP:", cfg.App.Name)
-	fmt.Printf("Config: %v\n", cfg)
 }
