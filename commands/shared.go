@@ -22,18 +22,28 @@ func LogDebug(ctx *cli.Context, s string) {
 	}
 }
 
-func getAllFlags(ctx *cli.Context) map[string]string {
-	flagValues := make(map[string]string)
+func getAllFlags(ctx *cli.Context) map[string]map[string]string {
+
+	// collection for all global and user assigned flags
+	allFlags := make(map[string]map[string]string)
+
+	// get global flags
+	globalFlags := make(map[string]string)
 	for i := 0; i < len(ctx.GlobalFlagNames()); i++ {
 		flag := ctx.GlobalFlagNames()[i]
 		value := ctx.GlobalString(flag)
-		flagValues[flag] = value
+		globalFlags[flag] = value
 	}
+	allFlags["global"] = globalFlags
 
+	// get user assigned flags
+	userFlags := make(map[string]string)
 	for i := 0; i < len(ctx.FlagNames()); i++ {
 		flag := ctx.FlagNames()[i]
 		value := ctx.String(flag)
-		flagValues[flag] = value
+		userFlags[flag] = value
 	}
-	return flagValues
+	allFlags["user"] = userFlags
+
+	return allFlags
 }

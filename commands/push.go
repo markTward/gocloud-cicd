@@ -60,7 +60,7 @@ func push(ctx *cli.Context) error {
 		LogError(err)
 		return err
 	}
-	log.Println("push args with default values:", getAllFlags(ctx))
+	log.Println("push command args:", getAllFlags(ctx))
 
 	// initialize configuration object
 	cfg := config.New()

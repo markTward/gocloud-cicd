@@ -86,7 +86,7 @@ func deploy(ctx *cli.Context) error {
 		LogError(err)
 		return err
 	}
-	log.Println("deploy args with default values:", getAllFlags(ctx))
+	log.Println("deploy command args:", getAllFlags(ctx))
 
 	// get active CD provider indicated by config and assert as Deployer
 	var activeCDProvider interface{}
