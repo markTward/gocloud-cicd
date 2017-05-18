@@ -1,4 +1,4 @@
-package commands
+package main
 
 import (
 	"bytes"
@@ -14,7 +14,7 @@ import (
 
 var event, baseImage, pr string
 
-var PushCmd = cli.Command{
+var pushCmd = cli.Command{
 	Name:  "push",
 	Usage: "push images to repository (gcr or docker)",
 	Flags: []cli.Flag{
@@ -57,7 +57,7 @@ var PushCmd = cli.Command{
 func push(ctx *cli.Context) error {
 
 	if err := validatePushArgs(); err != nil {
-		LogError(err)
+		logError(err)
 		return err
 	}
 	log.Println("push command args:", getAllFlags(ctx))
@@ -65,30 +65,30 @@ func push(ctx *cli.Context) error {
 	// initialize configuration object
 	cfg := config.New()
 	if err := config.Load(configFile, &cfg); err != nil {
-		LogError(err)
+		logError(err)
 		return err
 	}
 
-	LogDebug(ctx, fmt.Sprintf("%v", spew.Sdump(cfg)))
+	logDebug(ctx, fmt.Sprintf("%v", spew.Sdump(cfg)))
 
 	// initialize active Registry indicated by config and assert as Registrator
 	var activeRegistry interface{}
 	var err error
 	if activeRegistry, err = cfg.GetActiveRegistry(); err != nil {
-		LogError(err)
+		logError(err)
 		return err
 	}
 	ar := activeRegistry.(config.Registrator)
 
 	// validate registry has required values
 	if err := ar.IsRegistryValid(); err != nil {
-		LogError(err)
+		logError(err)
 		return err
 	}
 
 	// authenticate credentials for registry
 	if err := ar.Authenticate(); err != nil {
-		LogError(err)
+		logError(err)
 		return err
 	}
 
@@ -96,13 +96,13 @@ func push(ctx *cli.Context) error {
 	var images []string
 	if images = makeTagList(ctx, ar.GetRepoURL(), baseImage, event, branch, pr); len(images) == 0 {
 		fmt.Errorf("no images to tag: ", images)
-		LogError(err)
+		logError(err)
 		return err
 	}
 
 	// tag images
 	if err := tagImages(baseImage, images); err != nil {
-		LogError(err)
+		logError(err)
 		return err
 	}
 	log.Println("tagged images:", images)
@@ -110,7 +110,7 @@ func push(ctx *cli.Context) error {
 	// push tagged images
 	var result []string
 	if result, err = ar.Push(images, dryrun); err != nil {
-		LogError(err)
+		logError(err)
 		return err
 	}
 	log.Println("pushed images:", result)
@@ -119,7 +119,7 @@ func push(ctx *cli.Context) error {
 
 func makeTagList(ctx *cli.Context, repoURL string, refImage string, event string, branch string, pr string) (images []string) {
 
-	LogDebug(ctx, fmt.Sprintf("makeTagList args: repo url: %v, image: %v, event type: %v, branch: %v, pull request id: %v", repoURL, refImage, event, branch, pr))
+	logDebug(ctx, fmt.Sprintf("makeTagList args: repo url: %v, image: %v, event type: %v, branch: %v, pull request id: %v", repoURL, refImage, event, branch, pr))
 
 	// tag additional images based on build event type
 	tagSep := strings.Index(refImage, ":")

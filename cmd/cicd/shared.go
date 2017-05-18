@@ -1,4 +1,4 @@
-package commands
+package main
 
 import (
 	"log"
@@ -12,11 +12,11 @@ var configFile, branch string
 var dryrun bool
 
 // utility functions
-func LogError(err error) {
+func logError(err error) {
 	log.Printf("error: %v\n", strings.TrimSpace(err.Error()))
 }
 
-func LogDebug(ctx *cli.Context, s string) {
+func logDebug(ctx *cli.Context, s string) {
 	if ctx.GlobalBool("debug") {
 		log.Printf("debug: %v\n", strings.TrimSpace(s))
 	}

@@ -1,4 +1,4 @@
-package commands
+package main
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 
 var buildTag, containerRepo, serviceName, namespace, chartPath string
 
-var DeployCmd = cli.Command{
+var deployCmd = cli.Command{
 	Name:  "deploy",
 	Usage: "deploy services to providers (helm ==> k8s)",
 	Flags: []cli.Flag{
@@ -66,24 +66,23 @@ func deploy(ctx *cli.Context) error {
 	// initialize configuration object
 	cfg := config.New()
 	if err := config.Load(configFile, &cfg); err != nil {
-		LogDebug(ctx, "config error?")
-		LogError(err)
+		logError(err)
 		return err
 	}
-	LogDebug(ctx, fmt.Sprintf("%v", spew.Sdump(cfg)))
+	logDebug(ctx, fmt.Sprintf("%v", spew.Sdump(cfg)))
 
 	// initialize active Registry indicated by config and assert as Registrator
 	var activeRegistry interface{}
 	var err error
 	if activeRegistry, err = cfg.GetActiveRegistry(); err != nil {
-		LogError(err)
+		logError(err)
 		return err
 	}
 	ar := activeRegistry.(config.Registrator)
 
 	// validate args and apply defaults
 	if err = validateDeployArgs(ctx, &cfg, ar); err != nil {
-		LogError(err)
+		logError(err)
 		return err
 	}
 	log.Println("deploy command args:", getAllFlags(ctx))
@@ -91,14 +90,14 @@ func deploy(ctx *cli.Context) error {
 	// get active CD provider indicated by config and assert as Deployer
 	var activeCDProvider interface{}
 	if activeCDProvider, err = cfg.GetActiveCDProvider(); err != nil {
-		LogError(err)
+		logError(err)
 		return err
 	}
 	ad := activeCDProvider.(config.Deployer)
 
 	// deploy using active CD provider
 	if err = ad.Deploy(ctx, &cfg); err != nil {
-		LogError(err)
+		logError(err)
 	}
 
 	return err
@@ -134,7 +133,7 @@ func validateDeployArgs(ctx *cli.Context, cfg *config.Config, ar config.Registra
 	}
 
 	if isNotExist(chartPath) {
-		LogDebug(ctx, fmt.Sprintf("is not exist chartpath: %v", chartPath))
+		logDebug(ctx, fmt.Sprintf("is not exist chartpath: %v", chartPath))
 		err = fmt.Errorf("chart path invalid: %v", chartPath)
 		return err
 	}
