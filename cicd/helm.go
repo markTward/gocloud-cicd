@@ -38,7 +38,7 @@ func (h *Helm) Deploy(ctx *cli.Context, wf *Workflow) (err error) {
 	args := []string{"--install", release, "--namespace", ctx.String("namespace")}
 
 	// config file boolean flags
-	for _, flag := range wf.Providers.CDProvider.Helm.Options.Flags {
+	for _, flag := range wf.Provider.CD.Helm.Options.Flags {
 		args = append(args, flag)
 	}
 
@@ -53,7 +53,7 @@ func (h *Helm) Deploy(ctx *cli.Context, wf *Workflow) (err error) {
 	}
 
 	// write runtime helm --values <file> using when available in config  otherwise create/remove a TempFile
-	outFile := wf.Providers.CDProvider.Helm.Options.Values.Output
+	outFile := wf.Provider.CD.Helm.Options.Values.Output
 	var valuesFile *os.File
 	switch {
 	case outFile == "":
@@ -111,7 +111,7 @@ func renderHelmValuesFile(c *cli.Context, wf *Workflow, valuesFile *os.File, rep
 	// initialize the template
 	var t *template.Template
 	var err error
-	if t, err = template.ParseFiles(wf.Providers.CDProvider.Helm.Options.Values.Template); err != nil {
+	if t, err = template.ParseFiles(wf.Provider.CD.Helm.Options.Values.Template); err != nil {
 		return err
 	}
 

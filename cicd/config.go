@@ -13,8 +13,7 @@ import (
 type Workflow struct {
 	Config
 	App
-	Registry
-	Providers
+	Provider
 }
 
 type Config struct {
@@ -31,18 +30,13 @@ type App struct {
 	Repo string
 }
 
-type Registry struct {
-	GCR
-	Docker
-}
-
-type Providers struct {
-	Github struct {
+type Provider struct {
+	CICD struct {
 		Repo   string
 		Branch string
 	}
 
-	CIProvider struct {
+	CI struct {
 		Travis
 	}
 
@@ -50,8 +44,13 @@ type Providers struct {
 		GKE
 	}
 
-	CDProvider struct {
+	CD struct {
 		Helm
+	}
+
+	Registry struct {
+		GCR
+		Docker
 	}
 }
 
@@ -86,9 +85,9 @@ func Load(cf string, wf *Workflow) error {
 func (wf *Workflow) GetActiveRegistry() (activeRegistry interface{}, err error) {
 	switch wf.Config.Provider.Registry {
 	case "gcr":
-		activeRegistry = &wf.Registry.GCR
+		activeRegistry = &wf.Provider.Registry.GCR
 	case "docker":
-		activeRegistry = &wf.Registry.Docker
+		activeRegistry = &wf.Provider.Registry.Docker
 	default:
 		err = fmt.Errorf("unknown workflow registry: <%v>", wf.Config.Provider.Registry)
 		log.Println(err)
@@ -99,7 +98,7 @@ func (wf *Workflow) GetActiveRegistry() (activeRegistry interface{}, err error) 
 func (wf *Workflow) GetActiveCDProvider() (activeCD interface{}, err error) {
 	switch wf.Config.Provider.CD {
 	case "helm":
-		activeCD = &wf.CDProvider.Helm
+		activeCD = &wf.Provider.CD.Helm
 	default:
 		err = fmt.Errorf("unknown workflow CD provider: <%v>", wf.Config.Provider.CD)
 		log.Println(err)

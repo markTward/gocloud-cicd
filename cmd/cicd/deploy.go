@@ -115,7 +115,7 @@ func validateDeployArgs(ctx *cli.Context, wf *cicd.Workflow, ar cicd.Registrator
 	}
 
 	if namespace == "" {
-		if ns := wf.Providers.CDProvider.Helm.Namespace; ns == "" {
+		if ns := wf.Provider.CD.Helm.Namespace; ns == "" {
 			err = fmt.Errorf("%v", "namespace required when not defined in cicd.yaml")
 			return err
 		} else {
@@ -124,7 +124,7 @@ func validateDeployArgs(ctx *cli.Context, wf *cicd.Workflow, ar cicd.Registrator
 	}
 
 	if chartPath == "" {
-		if cp := wf.Providers.CDProvider.Helm.Chartpath; cp == "" {
+		if cp := wf.Provider.CD.Helm.Chartpath; cp == "" {
 			err = fmt.Errorf("%v", "chart path required when not defined in cicd.yaml")
 			return err
 		} else {
