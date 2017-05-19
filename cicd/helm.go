@@ -71,7 +71,7 @@ func (h *Helm) Deploy(ctx *cli.Context, wf *Workflow) (err error) {
 	}
 
 	// render values file from template
-	err = renderHelmValuesFile(ctx, wf, valuesFile, ctx.String("repo"), ctx.String("tag"))
+	err = renderHelmValuesFile(wf, valuesFile, ctx.String("repo"), ctx.String("tag"))
 	if err != nil {
 		return fmt.Errorf("renderHelmValuesFile(): %v", err)
 	}
@@ -100,7 +100,7 @@ func (h *Helm) Deploy(ctx *cli.Context, wf *Workflow) (err error) {
 	return err
 }
 
-func renderHelmValuesFile(c *cli.Context, wf *Workflow, valuesFile *os.File, repo string, tag string) error {
+func renderHelmValuesFile(wf *Workflow, valuesFile *os.File, repo string, tag string) error {
 	type Values struct {
 		Repo, Tag, ServiceType string
 	}
