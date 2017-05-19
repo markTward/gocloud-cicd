@@ -14,7 +14,6 @@ import (
 type Docker struct {
 	Name        string
 	Description string
-	Enabled     bool
 	Host        string
 	Account     string
 	Repo        string

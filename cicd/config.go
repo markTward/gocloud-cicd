@@ -19,9 +19,22 @@ type Workflow struct {
 type Config struct {
 	Enabled  bool
 	Provider struct {
-		CI       string
-		CD       string
-		Registry string
+		CI struct {
+			ID      string
+			Enabled bool
+		}
+		CD struct {
+			ID      string
+			Enabled bool
+		}
+		Registry struct {
+			ID      string
+			Enabled bool
+		}
+		Platform struct {
+			ID      string
+			Enabled bool
+		}
 	}
 }
 
@@ -82,25 +95,26 @@ func Load(cf string, wf *Workflow) error {
 
 }
 
+//TODO: create getActive funcs for CIProvider and Platform
 func (wf *Workflow) GetActiveRegistry() (activeRegistry interface{}, err error) {
-	switch wf.Config.Provider.Registry {
+	switch wf.Config.Provider.Registry.ID {
 	case "gcr":
 		activeRegistry = &wf.Provider.Registry.GCR
 	case "docker":
 		activeRegistry = &wf.Provider.Registry.Docker
 	default:
-		err = fmt.Errorf("unknown workflow registry: <%v>", wf.Config.Provider.Registry)
+		err = fmt.Errorf("unknown workflow registry: <%v>", wf.Config.Provider.Registry.ID)
 		log.Println(err)
 	}
 	return activeRegistry, err
 }
 
 func (wf *Workflow) GetActiveCDProvider() (activeCD interface{}, err error) {
-	switch wf.Config.Provider.CD {
+	switch wf.Config.Provider.CD.ID {
 	case "helm":
 		activeCD = &wf.Provider.CD.Helm
 	default:
-		err = fmt.Errorf("unknown workflow CD provider: <%v>", wf.Config.Provider.CD)
+		err = fmt.Errorf("unknown workflow CD provider: <%v>", wf.Config.Provider.CD.ID)
 		log.Println(err)
 	}
 	return activeCD, err
