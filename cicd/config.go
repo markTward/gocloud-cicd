@@ -57,7 +57,7 @@ type Provider struct {
 type Registrator interface {
 	IsRegistryValid() error
 	Push(*cli.Context, []string) ([]string, error)
-	Authenticate() error
+	Authenticate(*cli.Context) error
 	GetRepoURL() string
 }
 

@@ -87,7 +87,7 @@ func push(ctx *cli.Context) error {
 	}
 
 	// authenticate credentials for registry
-	if err := ar.Authenticate(); err != nil {
+	if err := ar.Authenticate(ctx); err != nil {
 		logError(err)
 		return err
 	}

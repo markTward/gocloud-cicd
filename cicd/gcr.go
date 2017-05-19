@@ -26,27 +26,31 @@ func (r *GCR) GetRepoURL() (repoURL string) {
 	return r.Url
 }
 
-func (r *GCR) Authenticate() (err error) {
+func (r *GCR) Authenticate(ctx *cli.Context) (err error) {
 	var stderr bytes.Buffer
 
 	if _, err = os.Stat(r.Keyfile); os.IsNotExist(err) {
-		err = fmt.Errorf("gcloud authentication: %v", err)
+		err = fmt.Errorf("gcloud auth key: %v", err)
 		return err
 	}
 
 	cmd := exec.Command("gcloud", "auth", "activate-service-account", "--key-file", r.Keyfile)
 	cmd.Stderr = &stderr
 
-	log.Println(strings.Join(cmd.Args, " "))
+	if !ctx.Bool("dryrun") {
+		log.Println("execute:", strings.Join(cmd.Args, " "))
 
-	if err = cmd.Run(); err != nil {
+		if err = cmd.Run(); err != nil {
+			logCmdOutput(stderr.Bytes())
+			err = fmt.Errorf("%v", stderr.String())
+			return err
+		}
+
+		// BUG: gcloud returning successful result over stderr (why?)
 		logCmdOutput(stderr.Bytes())
-		err = fmt.Errorf("%v", stderr.String())
-		return err
+	} else {
+		log.Println("dryrun:", strings.Join(cmd.Args, " "))
 	}
-
-	// BUG: gcloud returning successful result over stderr (why?)
-	logCmdOutput(stderr.Bytes())
 
 	return err
 

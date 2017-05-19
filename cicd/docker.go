@@ -21,7 +21,7 @@ type Docker struct {
 	Url         string
 }
 
-func (r *Docker) Authenticate() (err error) {
+func (r *Docker) Authenticate(ctx *cli.Context) (err error) {
 	var stderr bytes.Buffer
 	var cmdOut []byte
 
@@ -38,15 +38,18 @@ func (r *Docker) Authenticate() (err error) {
 	}
 
 	cmd := exec.Command("docker", "login", "-u", dockerUser, "-p", dockerPass)
-	cmd.Stderr = &stderr
-	log.Println(strings.Join(cmd.Args[:4], " "), " -p ********")
+	if !ctx.Bool("dryrun") {
+		cmd.Stderr = &stderr
+		log.Println("execute:", strings.Join(cmd.Args[:4], " "), " -p ********")
 
-	if cmdOut, err = cmd.Output(); err != nil {
-		err = fmt.Errorf("%v", stderr.String())
-		return err
+		if cmdOut, err = cmd.Output(); err != nil {
+			err = fmt.Errorf("%v", stderr.String())
+			return err
+		}
+		logCmdOutput(cmdOut)
+	} else {
+		log.Println("dryrun:", strings.Join(cmd.Args[:4], " "), " -p ********")
 	}
-
-	logCmdOutput(cmdOut)
 
 	return err
 }
@@ -68,7 +71,7 @@ func (docker *Docker) Push(ctx *cli.Context, images []string) (pushed []string, 
 		cmd.Stderr = &stderr
 
 		if !ctx.Bool("dryrun") {
-			log.Println("execute: ", strings.Join(cmd.Args, " "))
+			log.Println("execute:", strings.Join(cmd.Args, " "))
 
 			if cmdOut, err = cmd.Output(); err != nil {
 				err = fmt.Errorf("%v: %v", image, stderr.String())
@@ -79,7 +82,7 @@ func (docker *Docker) Push(ctx *cli.Context, images []string) (pushed []string, 
 			pushed = append(pushed, image)
 
 		} else {
-			log.Println("dryrun: ", strings.Join(cmd.Args, " "))
+			log.Println("dryrun:", strings.Join(cmd.Args, " "))
 		}
 	}
 	return pushed, err
