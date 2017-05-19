@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/urfave/cli"
 )
 
 type GCR struct {
@@ -50,17 +52,16 @@ func (r *GCR) Authenticate() (err error) {
 
 }
 
-func (gcr *GCR) Push(images []string, isDryrun bool) (pushed []string, err error) {
+func (gcr *GCR) Push(ctx *cli.Context, images []string) (pushed []string, err error) {
 	var stderr bytes.Buffer
 	var cmdOut []byte
-	// IDEA: could use single command to push all repo images: gcloud docker -- push gcr.io/k8sdemo-159622/gocloud
-	// but assumes that process ALWAYS wants ALL tags for repo to be pushed.  good for isolated build env, but ...
+
 	for _, image := range images {
 
 		cmd := exec.Command("gcloud", "docker", "--", "push", image)
 		cmd.Stderr = &stderr
 
-		if !isDryrun {
+		if !ctx.Bool("dryrun") {
 			log.Println("execute: ", strings.Join(cmd.Args, " "))
 
 			if cmdOut, err = cmd.Output(); err != nil {

@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/urfave/cli"
 )
 
 type Docker struct {
@@ -56,7 +58,7 @@ func (r *Docker) IsRegistryValid() (err error) {
 	return err
 }
 
-func (docker *Docker) Push(images []string, isDryrun bool) (pushed []string, err error) {
+func (docker *Docker) Push(ctx *cli.Context, images []string) (pushed []string, err error) {
 	var stderr bytes.Buffer
 	var cmdOut []byte
 
@@ -65,7 +67,7 @@ func (docker *Docker) Push(images []string, isDryrun bool) (pushed []string, err
 		cmd := exec.Command("docker", "push", image)
 		cmd.Stderr = &stderr
 
-		if !isDryrun {
+		if !ctx.Bool("dryrun") {
 			log.Println("execute: ", strings.Join(cmd.Args, " "))
 
 			if cmdOut, err = cmd.Output(); err != nil {

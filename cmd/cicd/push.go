@@ -63,18 +63,18 @@ func push(ctx *cli.Context) error {
 	log.Println("push command args:", getAllFlags(ctx))
 
 	// initialize configuration object
-	cfg := cicd.New()
-	if err := cicd.Load(configFile, &cfg); err != nil {
+	wf := cicd.New()
+	if err := cicd.Load(configFile, &wf); err != nil {
 		logError(err)
 		return err
 	}
 
-	logDebug(ctx, fmt.Sprintf("%v", spew.Sdump(cfg)))
+	logDebug(ctx, fmt.Sprintf("%v", spew.Sdump(wf)))
 
 	// initialize active Registry indicated by config and assert as Registrator
 	var activeRegistry interface{}
 	var err error
-	if activeRegistry, err = cfg.GetActiveRegistry(); err != nil {
+	if activeRegistry, err = wf.GetActiveRegistry(); err != nil {
 		logError(err)
 		return err
 	}
@@ -108,7 +108,7 @@ func push(ctx *cli.Context) error {
 
 	// push tagged images
 	var result []string
-	if result, err = ar.Push(images, dryrun); err != nil {
+	if result, err = ar.Push(ctx, images); err != nil {
 		logError(err)
 		return err
 	}
@@ -118,7 +118,8 @@ func push(ctx *cli.Context) error {
 
 func makeTagList(ctx *cli.Context, repoURL string, refImage string, event string, branch string, pr string) (images []string) {
 
-	logDebug(ctx, fmt.Sprintf("makeTagList args: repo url: %v, image: %v, event type: %v, branch: %v, pull request id: %v", repoURL, refImage, event, branch, pr))
+	logDebug(ctx, fmt.Sprintf("makeTagList args: repo url: %v, image: %v, event type: %v, branch: %v, pull request id: %v",
+		repoURL, refImage, event, branch, pr))
 
 	// tag additional images based on build event type
 	tagSep := strings.Index(refImage, ":")
