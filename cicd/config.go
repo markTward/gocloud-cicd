@@ -18,6 +18,8 @@ type Workflow struct {
 
 type Config struct {
 	Enabled  bool
+	Debug    bool
+	Dryrun   bool
 	Provider struct {
 		CI struct {
 			ID      string
@@ -69,8 +71,8 @@ type Provider struct {
 
 type Registrator interface {
 	IsRegistryValid() error
-	Push(*cli.Context, []string) ([]string, error)
-	Authenticate(*cli.Context) error
+	Push(*cli.Context, *Workflow, []string) ([]string, error)
+	Authenticate(*cli.Context, *Workflow) error
 	GetRepoURL() string
 }
 

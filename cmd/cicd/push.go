@@ -29,11 +29,6 @@ var pushCmd = cli.Command{
 			Value:       "./cicd.yaml",
 			Destination: &configFile,
 		},
-		cli.BoolFlag{
-			Name:        "dryrun",
-			Usage:       "log output but do not execute",
-			Destination: &dryrun,
-		},
 		cli.StringFlag{
 			Name:        "event, e",
 			Usage:       "build event type from list: push, pull_request",
@@ -87,7 +82,7 @@ func push(ctx *cli.Context) error {
 	}
 
 	// authenticate credentials for registry
-	if err := ar.Authenticate(ctx); err != nil {
+	if err := ar.Authenticate(ctx, &wf); err != nil {
 		logError(err)
 		return err
 	}
@@ -108,7 +103,7 @@ func push(ctx *cli.Context) error {
 
 	// push tagged images
 	var result []string
-	if result, err = ar.Push(ctx, images); err != nil {
+	if result, err = ar.Push(ctx, &wf, images); err != nil {
 		logError(err)
 		return err
 	}

@@ -10,16 +10,16 @@ import (
 func main() {
 
 	var debug bool
-	var verbose bool
+	var dryrun bool
 
 	app := cli.NewApp()
 	app.Name = "CICD Tools"
 	app.Usage = "Continuous Intergration and Deployment Tools"
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
-			Name:        "verbose",
-			Usage:       "Show more output",
-			Destination: &verbose,
+			Name:        "dryrun",
+			Usage:       "Show command output without execution",
+			Destination: &dryrun,
 		},
 		cli.BoolFlag{
 			Name:        "debug",

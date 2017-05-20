@@ -19,12 +19,9 @@ type Helm struct {
 	Release   string
 	Namespace string
 	Chartpath string
-	Options   struct {
-		Flags  []string
-		Values struct {
-			Template string
-			Output   string
-		}
+	Values    struct {
+		Template string
+		Output   string
 	}
 }
 
@@ -36,23 +33,18 @@ func (h *Helm) Deploy(ctx *cli.Context, wf *Workflow) (err error) {
 	// helm required flags
 	args := []string{"--install", release, "--namespace", ctx.String("namespace")}
 
-	// config file boolean flags
-	for _, flag := range wf.Provider.CD.Helm.Options.Flags {
-		args = append(args, flag)
-	}
-
 	// cli flag conversion
-	if ctx.GlobalBool("debug") {
+	if isDebug(ctx, wf) {
 		args = append(args, "--debug")
 	}
 
 	// convert cicd --dryrun arg to helm dialect
-	if ctx.Bool("dryrun") {
+	if isDryRun(ctx, wf) {
 		args = append(args, "--dry-run")
 	}
 
 	// write runtime helm --values <file> using when available in config  otherwise create/remove a TempFile
-	outFile := wf.Provider.CD.Helm.Options.Values.Output
+	outFile := wf.Provider.CD.Helm.Values.Output
 	var valuesFile *os.File
 	switch {
 	case outFile == "":
@@ -110,7 +102,7 @@ func renderHelmValuesFile(wf *Workflow, valuesFile *os.File, repo string, tag st
 	// initialize the template
 	var t *template.Template
 	var err error
-	if t, err = template.ParseFiles(wf.Provider.CD.Helm.Options.Values.Template); err != nil {
+	if t, err = template.ParseFiles(wf.Provider.CD.Helm.Values.Template); err != nil {
 		return err
 	}
 

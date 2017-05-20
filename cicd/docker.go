@@ -20,7 +20,7 @@ type Docker struct {
 	Url         string
 }
 
-func (r *Docker) Authenticate(ctx *cli.Context) (err error) {
+func (r *Docker) Authenticate(ctx *cli.Context, wf *Workflow) (err error) {
 	var stderr bytes.Buffer
 	var cmdOut []byte
 
@@ -37,7 +37,7 @@ func (r *Docker) Authenticate(ctx *cli.Context) (err error) {
 	}
 
 	cmd := exec.Command("docker", "login", "-u", dockerUser, "-p", dockerPass)
-	if !isDryRun(ctx) {
+	if !isDryRun(ctx, wf) {
 		cmd.Stderr = &stderr
 		log.Println("execute:", strings.Join(cmd.Args[:4], " "), " -p ********")
 
@@ -60,7 +60,7 @@ func (r *Docker) IsRegistryValid() (err error) {
 	return err
 }
 
-func (docker *Docker) Push(ctx *cli.Context, images []string) (pushed []string, err error) {
+func (docker *Docker) Push(ctx *cli.Context, wf *Workflow, images []string) (pushed []string, err error) {
 	var stderr bytes.Buffer
 	var cmdOut []byte
 
@@ -69,7 +69,7 @@ func (docker *Docker) Push(ctx *cli.Context, images []string) (pushed []string, 
 		cmd := exec.Command("docker", "push", image)
 		cmd.Stderr = &stderr
 
-		if !isDryRun(ctx) {
+		if !isDryRun(ctx, wf) {
 			log.Println("execute:", strings.Join(cmd.Args, " "))
 
 			if cmdOut, err = cmd.Output(); err != nil {

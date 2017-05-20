@@ -25,7 +25,7 @@ func (r *GCR) GetRepoURL() (repoURL string) {
 	return r.Url
 }
 
-func (r *GCR) Authenticate(ctx *cli.Context) (err error) {
+func (r *GCR) Authenticate(ctx *cli.Context, wf *Workflow) (err error) {
 	var stderr bytes.Buffer
 
 	if _, err = os.Stat(r.Keyfile); os.IsNotExist(err) {
@@ -36,7 +36,7 @@ func (r *GCR) Authenticate(ctx *cli.Context) (err error) {
 	cmd := exec.Command("gcloud", "auth", "activate-service-account", "--key-file", r.Keyfile)
 	cmd.Stderr = &stderr
 
-	if !isDryRun(ctx) {
+	if !isDryRun(ctx, wf) {
 		log.Println("execute:", strings.Join(cmd.Args, " "))
 
 		if err = cmd.Run(); err != nil {
@@ -55,7 +55,7 @@ func (r *GCR) Authenticate(ctx *cli.Context) (err error) {
 
 }
 
-func (gcr *GCR) Push(ctx *cli.Context, images []string) (pushed []string, err error) {
+func (gcr *GCR) Push(ctx *cli.Context, wf *Workflow, images []string) (pushed []string, err error) {
 	var stderr bytes.Buffer
 	var cmdOut []byte
 
@@ -64,7 +64,7 @@ func (gcr *GCR) Push(ctx *cli.Context, images []string) (pushed []string, err er
 		cmd := exec.Command("gcloud", "docker", "--", "push", image)
 		cmd.Stderr = &stderr
 
-		if !isDryRun(ctx) {
+		if !isDryRun(ctx, wf) {
 			log.Println("execute: ", strings.Join(cmd.Args, " "))
 
 			if cmdOut, err = cmd.Output(); err != nil {

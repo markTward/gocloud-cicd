@@ -9,7 +9,6 @@ import (
 
 // vars shared by multiple commands
 var configFile, branch string
-var dryrun bool
 
 // utility functions
 func logError(err error) {

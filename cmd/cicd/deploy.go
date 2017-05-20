@@ -32,11 +32,6 @@ var deployCmd = cli.Command{
 			Value:       "./cicd.yaml",
 			Destination: &configFile,
 		},
-		cli.BoolFlag{
-			Name:        "dryrun",
-			Usage:       "log output but do not execute",
-			Destination: &dryrun,
-		},
 		cli.StringFlag{
 			Name:        "repo, r",
 			Usage:       "repository source for images",
