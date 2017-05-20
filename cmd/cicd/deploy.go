@@ -60,7 +60,7 @@ func deploy(ctx *cli.Context) error {
 
 	// initialize configuration object
 	wf := cicd.New()
-	if err := cicd.Load(configFile, &wf); err != nil {
+	if err := cicd.Load(configFile, wf); err != nil {
 		logError(err)
 		return err
 	}
@@ -76,7 +76,7 @@ func deploy(ctx *cli.Context) error {
 	ar := activeRegistry.(cicd.Registrator)
 
 	// validate args and apply defaults
-	if err = validateDeployArgs(ctx, &wf, ar); err != nil {
+	if err = validateDeployArgs(ctx, wf, ar); err != nil {
 		logError(err)
 		return err
 	}
@@ -91,7 +91,7 @@ func deploy(ctx *cli.Context) error {
 	ad := activeCDProvider.(cicd.Deployer)
 
 	// deploy using active CD provider
-	if err = ad.Deploy(ctx, &wf); err != nil {
+	if err = ad.Deploy(ctx, wf); err != nil {
 		logError(err)
 	}
 
@@ -100,6 +100,16 @@ func deploy(ctx *cli.Context) error {
 
 func validateDeployArgs(ctx *cli.Context, wf *cicd.Workflow, ar cicd.Registrator) (err error) {
 
+	// handle globals from cli and/or workflow config
+	if isDebug(ctx, wf) {
+		debug = true
+	}
+
+	if isDryRun(ctx, wf) {
+		dryrun = true
+	}
+
+	//
 	if buildTag == "" {
 		err = fmt.Errorf("%v", "build tag a required value")
 		return err

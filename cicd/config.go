@@ -80,8 +80,9 @@ type Deployer interface {
 	Deploy(*cli.Context, *Workflow) error
 }
 
-func New() Workflow {
-	return Workflow{}
+func New() *Workflow {
+	wf := Workflow{}
+	return &wf
 }
 
 func Load(cf string, wf *Workflow) error {

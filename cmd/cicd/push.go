@@ -51,18 +51,18 @@ var pushCmd = cli.Command{
 
 func push(ctx *cli.Context) error {
 
-	if err := validatePushArgs(); err != nil {
+	// initialize configuration object
+	wf := cicd.New()
+	if err := cicd.Load(configFile, wf); err != nil {
+		logError(err)
+		return err
+	}
+
+	if err := validatePushArgs(ctx, wf); err != nil {
 		logError(err)
 		return err
 	}
 	log.Println("push command args:", getAllFlags(ctx))
-
-	// initialize configuration object
-	wf := cicd.New()
-	if err := cicd.Load(configFile, &wf); err != nil {
-		logError(err)
-		return err
-	}
 
 	logDebug(ctx, fmt.Sprintf("%v", spew.Sdump(wf)))
 
@@ -82,7 +82,7 @@ func push(ctx *cli.Context) error {
 	}
 
 	// authenticate credentials for registry
-	if err := ar.Authenticate(ctx, &wf); err != nil {
+	if err := ar.Authenticate(ctx, wf); err != nil {
 		logError(err)
 		return err
 	}
@@ -103,7 +103,7 @@ func push(ctx *cli.Context) error {
 
 	// push tagged images
 	var result []string
-	if result, err = ar.Push(ctx, &wf, images); err != nil {
+	if result, err = ar.Push(ctx, wf, images); err != nil {
 		logError(err)
 		return err
 	}
@@ -152,7 +152,17 @@ func tagImages(src string, targets []string) (err error) {
 	return err
 }
 
-func validatePushArgs() (err error) {
+func validatePushArgs(ctx *cli.Context, wf *cicd.Workflow) (err error) {
+
+	// handle globals from cli and/or workflow config
+	if isDebug(ctx, wf) {
+		debug = true
+	}
+
+	if isDryRun(ctx, wf) {
+		dryrun = true
+	}
+
 	switch {
 	case baseImage == "":
 		err = fmt.Errorf("%v", "build image a required value; use --image option")

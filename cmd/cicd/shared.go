@@ -4,6 +4,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/markTward/gocloud-cicd/cicd"
 	cli "github.com/urfave/cli"
 )
 
@@ -45,4 +46,12 @@ func getAllFlags(ctx *cli.Context) map[string]map[string]string {
 	allFlags["user"] = userFlags
 
 	return allFlags
+}
+
+func isDryRun(ctx *cli.Context, wf *cicd.Workflow) bool {
+	return ctx.GlobalBool("dryrun") || wf.Config.Dryrun
+}
+
+func isDebug(ctx *cli.Context, wf *cicd.Workflow) bool {
+	return ctx.GlobalBool("debug") || wf.Config.Debug
 }

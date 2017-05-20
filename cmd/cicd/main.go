@@ -7,10 +7,9 @@ import (
 	"github.com/urfave/cli"
 )
 
-func main() {
+var debug, dryrun bool
 
-	var debug bool
-	var dryrun bool
+func main() {
 
 	app := cli.NewApp()
 	app.Name = "CICD Tools"
