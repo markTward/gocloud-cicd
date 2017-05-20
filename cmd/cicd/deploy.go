@@ -1,4 +1,4 @@
-package commands
+package main
 
 import (
 	"fmt"
@@ -6,13 +6,13 @@ import (
 	"os"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/markTward/gocloud-cicd/config"
+	"github.com/markTward/gocloud-cicd"
 	"github.com/urfave/cli"
 )
 
 var buildTag, containerRepo, serviceName, namespace, chartPath string
 
-var DeployCmd = cli.Command{
+var deployCmd = cli.Command{
 	Name:  "deploy",
 	Usage: "deploy services to providers (helm ==> k8s)",
 	Flags: []cli.Flag{
@@ -31,11 +31,6 @@ var DeployCmd = cli.Command{
 			Usage:       "load configuration file from `FILE`",
 			Value:       "./cicd.yaml",
 			Destination: &configFile,
-		},
-		cli.BoolFlag{
-			Name:        "dryrun",
-			Usage:       "log output but do not execute",
-			Destination: &dryrun,
 		},
 		cli.StringFlag{
 			Name:        "repo, r",
@@ -64,48 +59,57 @@ var DeployCmd = cli.Command{
 func deploy(ctx *cli.Context) error {
 
 	// initialize configuration object
-	cfg := config.New()
-	if err := config.Load(configFile, &cfg); err != nil {
-		LogDebug(ctx, "config error?")
-		LogError(err)
+	wf := cicd.New()
+	if err := cicd.Load(configFile, wf); err != nil {
+		cicd.LogError(err)
 		return err
 	}
-	LogDebug(ctx, fmt.Sprintf("%v", spew.Sdump(cfg)))
+	cicd.LogDebug(ctx, fmt.Sprintf("%v", spew.Sdump(wf)))
 
 	// initialize active Registry indicated by config and assert as Registrator
 	var activeRegistry interface{}
 	var err error
-	if activeRegistry, err = cfg.GetActiveRegistry(); err != nil {
-		LogError(err)
+	if activeRegistry, err = wf.GetActiveRegistry(); err != nil {
+		cicd.LogError(err)
 		return err
 	}
-	ar := activeRegistry.(config.Registrator)
+	ar := activeRegistry.(cicd.Registrator)
 
 	// validate args and apply defaults
-	if err = validateDeployArgs(ctx, &cfg, ar); err != nil {
-		LogError(err)
+	if err = validateDeployArgs(ctx, wf, ar); err != nil {
+		cicd.LogError(err)
 		return err
 	}
-	log.Println("deploy command args:", getAllFlags(ctx))
+	log.Println("deploy command args:", cicd.GetAllFlags(ctx))
 
 	// get active CD provider indicated by config and assert as Deployer
 	var activeCDProvider interface{}
-	if activeCDProvider, err = cfg.GetActiveCDProvider(); err != nil {
-		LogError(err)
+	if activeCDProvider, err = wf.GetActiveCDProvider(); err != nil {
+		cicd.LogError(err)
 		return err
 	}
-	ad := activeCDProvider.(config.Deployer)
+	ad := activeCDProvider.(cicd.Deployer)
 
 	// deploy using active CD provider
-	if err = ad.Deploy(ctx, &cfg); err != nil {
-		LogError(err)
+	if err = ad.Deploy(ctx, wf); err != nil {
+		cicd.LogError(err)
 	}
 
 	return err
 }
 
-func validateDeployArgs(ctx *cli.Context, cfg *config.Config, ar config.Registrator) (err error) {
+func validateDeployArgs(ctx *cli.Context, wf *cicd.Workflow, ar cicd.Registrator) (err error) {
 
+	// handle globals from cli and/or workflow config
+	if cicd.IsDebug(ctx, wf) {
+		debug = true
+	}
+
+	if cicd.IsDryRun(ctx, wf) {
+		dryrun = true
+	}
+
+	//
 	if buildTag == "" {
 		err = fmt.Errorf("%v", "build tag a required value")
 		return err
@@ -116,7 +120,7 @@ func validateDeployArgs(ctx *cli.Context, cfg *config.Config, ar config.Registra
 	}
 
 	if namespace == "" {
-		if ns := cfg.Workflow.CDProvider.Helm.Namespace; ns == "" {
+		if ns := wf.Provider.CD.Helm.Namespace; ns == "" {
 			err = fmt.Errorf("%v", "namespace required when not defined in cicd.yaml")
 			return err
 		} else {
@@ -125,7 +129,7 @@ func validateDeployArgs(ctx *cli.Context, cfg *config.Config, ar config.Registra
 	}
 
 	if chartPath == "" {
-		if cp := cfg.Workflow.CDProvider.Helm.Chartpath; cp == "" {
+		if cp := wf.Provider.CD.Helm.Chartpath; cp == "" {
 			err = fmt.Errorf("%v", "chart path required when not defined in cicd.yaml")
 			return err
 		} else {
@@ -134,7 +138,7 @@ func validateDeployArgs(ctx *cli.Context, cfg *config.Config, ar config.Registra
 	}
 
 	if isNotExist(chartPath) {
-		LogDebug(ctx, fmt.Sprintf("is not exist chartpath: %v", chartPath))
+		cicd.LogDebug(ctx, fmt.Sprintf("is not exist chartpath: %v", chartPath))
 		err = fmt.Errorf("chart path invalid: %v", chartPath)
 		return err
 	}
@@ -149,7 +153,7 @@ func validateDeployArgs(ctx *cli.Context, cfg *config.Config, ar config.Registra
 	}
 
 	if serviceName == "" {
-		if svc := cfg.App.Name; svc == "" {
+		if svc := wf.App.Name; svc == "" {
 			err = fmt.Errorf("%v", "service name required when not defined in cicd.yaml")
 			return err
 		} else {

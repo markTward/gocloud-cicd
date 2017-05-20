@@ -1,17 +1,20 @@
-package commands
+package cicd
 
 import (
 	"log"
 	"strings"
 
-	cli "github.com/urfave/cli"
+	"github.com/urfave/cli"
 )
 
-// vars shared by multiple commands
-var configFile, branch string
-var dryrun bool
+func IsDryRun(ctx *cli.Context, wf *Workflow) bool {
+	return ctx.GlobalBool("dryrun") || wf.Config.Dryrun
+}
 
-// utility functions
+func IsDebug(ctx *cli.Context, wf *Workflow) bool {
+	return ctx.GlobalBool("debug") || wf.Config.Debug
+}
+
 func LogError(err error) {
 	log.Printf("error: %v\n", strings.TrimSpace(err.Error()))
 }
@@ -22,7 +25,7 @@ func LogDebug(ctx *cli.Context, s string) {
 	}
 }
 
-func getAllFlags(ctx *cli.Context) map[string]map[string]string {
+func GetAllFlags(ctx *cli.Context) map[string]map[string]string {
 
 	// collection for all global and user assigned flags
 	allFlags := make(map[string]map[string]string)

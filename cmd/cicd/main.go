@@ -4,23 +4,22 @@ import (
 	"os"
 	"sort"
 
-	"github.com/markTward/gocloud-cicd/commands"
 	"github.com/urfave/cli"
 )
 
-func main() {
+var configFile, branch string
+var debug, dryrun bool
 
-	var debug bool
-	var verbose bool
+func main() {
 
 	app := cli.NewApp()
 	app.Name = "CICD Tools"
 	app.Usage = "Continuous Intergration and Deployment Tools"
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
-			Name:        "verbose",
-			Usage:       "Show more output",
-			Destination: &verbose,
+			Name:        "dryrun",
+			Usage:       "Show command output without execution",
+			Destination: &dryrun,
 		},
 		cli.BoolFlag{
 			Name:        "debug",
@@ -29,15 +28,15 @@ func main() {
 		},
 	}
 	app.Commands = []cli.Command{
-		commands.DeployCmd,
-		commands.PushCmd,
+		deployCmd,
+		pushCmd,
 	}
 
 	sort.Sort(cli.CommandsByName(app.Commands))
 
 	sort.Sort(cli.FlagsByName(app.Flags))
-	sort.Sort(cli.FlagsByName(commands.DeployCmd.Flags))
-	sort.Sort(cli.FlagsByName(commands.PushCmd.Flags))
+	sort.Sort(cli.FlagsByName(deployCmd.Flags))
+	sort.Sort(cli.FlagsByName(pushCmd.Flags))
 
 	app.Run(os.Args)
 

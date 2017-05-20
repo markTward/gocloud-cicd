@@ -1,4 +1,4 @@
-package commands
+package main
 
 import (
 	"bytes"
@@ -8,13 +8,13 @@ import (
 	"strings"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/markTward/gocloud-cicd/config"
+	"github.com/markTward/gocloud-cicd"
 	"github.com/urfave/cli"
 )
 
 var event, baseImage, pr string
 
-var PushCmd = cli.Command{
+var pushCmd = cli.Command{
 	Name:  "push",
 	Usage: "push images to repository (gcr or docker)",
 	Flags: []cli.Flag{
@@ -28,11 +28,6 @@ var PushCmd = cli.Command{
 			Usage:       "load configuration file from `FILE`",
 			Value:       "./cicd.yaml",
 			Destination: &configFile,
-		},
-		cli.BoolFlag{
-			Name:        "dryrun",
-			Usage:       "log output but do not execute",
-			Destination: &dryrun,
 		},
 		cli.StringFlag{
 			Name:        "event, e",
@@ -56,61 +51,60 @@ var PushCmd = cli.Command{
 
 func push(ctx *cli.Context) error {
 
-	if err := validatePushArgs(); err != nil {
-		LogError(err)
-		return err
-	}
-	log.Println("push command args:", getAllFlags(ctx))
-
 	// initialize configuration object
-	cfg := config.New()
-	if err := config.Load(configFile, &cfg); err != nil {
-		LogError(err)
+	wf := cicd.New()
+	if err := cicd.Load(configFile, wf); err != nil {
+		cicd.LogError(err)
 		return err
 	}
 
-	LogDebug(ctx, fmt.Sprintf("%v", spew.Sdump(cfg)))
+	if err := validatePushArgs(ctx, wf); err != nil {
+		cicd.LogError(err)
+		return err
+	}
+	log.Println("push command args:", cicd.GetAllFlags(ctx))
+
+	cicd.LogDebug(ctx, fmt.Sprintf("%v", spew.Sdump(wf)))
 
 	// initialize active Registry indicated by config and assert as Registrator
 	var activeRegistry interface{}
 	var err error
-	if activeRegistry, err = cfg.GetActiveRegistry(); err != nil {
-		LogError(err)
+	if activeRegistry, err = wf.GetActiveRegistry(); err != nil {
+		cicd.LogError(err)
 		return err
 	}
-	ar := activeRegistry.(config.Registrator)
+	ar := activeRegistry.(cicd.Registrator)
 
 	// validate registry has required values
 	if err := ar.IsRegistryValid(); err != nil {
-		LogError(err)
+		cicd.LogError(err)
 		return err
 	}
 
 	// authenticate credentials for registry
-	if err := ar.Authenticate(); err != nil {
-		LogError(err)
+	if err := ar.Authenticate(ctx, wf); err != nil {
+		cicd.LogError(err)
 		return err
 	}
 
 	// make list of images to tag
 	var images []string
 	if images = makeTagList(ctx, ar.GetRepoURL(), baseImage, event, branch, pr); len(images) == 0 {
-		fmt.Errorf("no images to tag: ", images)
-		LogError(err)
+		cicd.LogError(fmt.Errorf("no images to tag: %v", images))
 		return err
 	}
 
 	// tag images
 	if err := tagImages(baseImage, images); err != nil {
-		LogError(err)
+		cicd.LogError(err)
 		return err
 	}
 	log.Println("tagged images:", images)
 
 	// push tagged images
 	var result []string
-	if result, err = ar.Push(images, dryrun); err != nil {
-		LogError(err)
+	if result, err = ar.Push(ctx, wf, images); err != nil {
+		cicd.LogError(err)
 		return err
 	}
 	log.Println("pushed images:", result)
@@ -119,7 +113,8 @@ func push(ctx *cli.Context) error {
 
 func makeTagList(ctx *cli.Context, repoURL string, refImage string, event string, branch string, pr string) (images []string) {
 
-	LogDebug(ctx, fmt.Sprintf("makeTagList args: repo url: %v, image: %v, event type: %v, branch: %v, pull request id: %v", repoURL, refImage, event, branch, pr))
+	cicd.LogDebug(ctx, fmt.Sprintf("makeTagList args: repo url: %v, image: %v, event type: %v, branch: %v, pull request id: %v",
+		repoURL, refImage, event, branch, pr))
 
 	// tag additional images based on build event type
 	tagSep := strings.Index(refImage, ":")
@@ -157,7 +152,17 @@ func tagImages(src string, targets []string) (err error) {
 	return err
 }
 
-func validatePushArgs() (err error) {
+func validatePushArgs(ctx *cli.Context, wf *cicd.Workflow) (err error) {
+
+	// handle globals from cli and/or workflow config
+	if cicd.IsDebug(ctx, wf) {
+		debug = true
+	}
+
+	if cicd.IsDryRun(ctx, wf) {
+		dryrun = true
+	}
+
 	switch {
 	case baseImage == "":
 		err = fmt.Errorf("%v", "build image a required value; use --image option")

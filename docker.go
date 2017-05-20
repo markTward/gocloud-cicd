@@ -1,4 +1,4 @@
-package config
+package cicd
 
 import (
 	"bytes"
@@ -7,19 +7,20 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/urfave/cli"
 )
 
 type Docker struct {
 	Name        string
 	Description string
-	Enabled     bool
 	Host        string
 	Account     string
 	Repo        string
 	Url         string
 }
 
-func (r *Docker) Authenticate() (err error) {
+func (r *Docker) Authenticate(ctx *cli.Context, wf *Workflow) (err error) {
 	var stderr bytes.Buffer
 	var cmdOut []byte
 
@@ -36,15 +37,18 @@ func (r *Docker) Authenticate() (err error) {
 	}
 
 	cmd := exec.Command("docker", "login", "-u", dockerUser, "-p", dockerPass)
-	cmd.Stderr = &stderr
-	log.Println(strings.Join(cmd.Args[:4], " "), " -p ********")
+	if !IsDryRun(ctx, wf) {
+		cmd.Stderr = &stderr
+		log.Println("execute:", strings.Join(cmd.Args[:4], " "), " -p ********")
 
-	if cmdOut, err = cmd.Output(); err != nil {
-		err = fmt.Errorf("%v", stderr.String())
-		return err
+		if cmdOut, err = cmd.Output(); err != nil {
+			err = fmt.Errorf("%v", stderr.String())
+			return err
+		}
+		logCmdOutput(cmdOut)
+	} else {
+		log.Println("dryrun:", strings.Join(cmd.Args[:4], " "), " -p ********")
 	}
-
-	logCmdOutput(cmdOut)
 
 	return err
 }
@@ -56,7 +60,7 @@ func (r *Docker) IsRegistryValid() (err error) {
 	return err
 }
 
-func (docker *Docker) Push(images []string, isDryrun bool) (pushed []string, err error) {
+func (docker *Docker) Push(ctx *cli.Context, wf *Workflow, images []string) (pushed []string, err error) {
 	var stderr bytes.Buffer
 	var cmdOut []byte
 
@@ -65,8 +69,8 @@ func (docker *Docker) Push(images []string, isDryrun bool) (pushed []string, err
 		cmd := exec.Command("docker", "push", image)
 		cmd.Stderr = &stderr
 
-		if !isDryrun {
-			log.Println("execute: ", strings.Join(cmd.Args, " "))
+		if !IsDryRun(ctx, wf) {
+			log.Println("execute:", strings.Join(cmd.Args, " "))
 
 			if cmdOut, err = cmd.Output(); err != nil {
 				err = fmt.Errorf("%v: %v", image, stderr.String())
@@ -77,7 +81,7 @@ func (docker *Docker) Push(images []string, isDryrun bool) (pushed []string, err
 			pushed = append(pushed, image)
 
 		} else {
-			log.Println("dryrun: ", strings.Join(cmd.Args, " "))
+			log.Println("dryrun:", strings.Join(cmd.Args, " "))
 		}
 	}
 	return pushed, err

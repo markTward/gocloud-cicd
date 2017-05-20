@@ -1,8 +1,7 @@
-package config
+package cicd
 
 type GKE struct {
 	Name        string
-	Enabled     bool
 	Project     string
 	Cluster     string
 	Computezone string
