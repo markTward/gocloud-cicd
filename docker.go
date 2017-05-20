@@ -37,7 +37,7 @@ func (r *Docker) Authenticate(ctx *cli.Context, wf *Workflow) (err error) {
 	}
 
 	cmd := exec.Command("docker", "login", "-u", dockerUser, "-p", dockerPass)
-	if !isDryRun(ctx, wf) {
+	if !IsDryRun(ctx, wf) {
 		cmd.Stderr = &stderr
 		log.Println("execute:", strings.Join(cmd.Args[:4], " "), " -p ********")
 
@@ -69,7 +69,7 @@ func (docker *Docker) Push(ctx *cli.Context, wf *Workflow, images []string) (pus
 		cmd := exec.Command("docker", "push", image)
 		cmd.Stderr = &stderr
 
-		if !isDryRun(ctx, wf) {
+		if !IsDryRun(ctx, wf) {
 			log.Println("execute:", strings.Join(cmd.Args, " "))
 
 			if cmdOut, err = cmd.Output(); err != nil {

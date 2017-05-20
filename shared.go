@@ -1,28 +1,31 @@
-package main
+package cicd
 
 import (
 	"log"
 	"strings"
 
-	"github.com/markTward/gocloud-cicd/cicd"
-	cli "github.com/urfave/cli"
+	"github.com/urfave/cli"
 )
 
-// vars shared by multiple commands
-var configFile, branch string
+func IsDryRun(ctx *cli.Context, wf *Workflow) bool {
+	return ctx.GlobalBool("dryrun") || wf.Config.Dryrun
+}
 
-// utility functions
-func logError(err error) {
+func IsDebug(ctx *cli.Context, wf *Workflow) bool {
+	return ctx.GlobalBool("debug") || wf.Config.Debug
+}
+
+func LogError(err error) {
 	log.Printf("error: %v\n", strings.TrimSpace(err.Error()))
 }
 
-func logDebug(ctx *cli.Context, s string) {
+func LogDebug(ctx *cli.Context, s string) {
 	if ctx.GlobalBool("debug") {
 		log.Printf("debug: %v\n", strings.TrimSpace(s))
 	}
 }
 
-func getAllFlags(ctx *cli.Context) map[string]map[string]string {
+func GetAllFlags(ctx *cli.Context) map[string]map[string]string {
 
 	// collection for all global and user assigned flags
 	allFlags := make(map[string]map[string]string)
@@ -46,12 +49,4 @@ func getAllFlags(ctx *cli.Context) map[string]map[string]string {
 	allFlags["user"] = userFlags
 
 	return allFlags
-}
-
-func isDryRun(ctx *cli.Context, wf *cicd.Workflow) bool {
-	return ctx.GlobalBool("dryrun") || wf.Config.Dryrun
-}
-
-func isDebug(ctx *cli.Context, wf *cicd.Workflow) bool {
-	return ctx.GlobalBool("debug") || wf.Config.Debug
 }

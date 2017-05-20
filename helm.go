@@ -34,12 +34,12 @@ func (h *Helm) Deploy(ctx *cli.Context, wf *Workflow) (err error) {
 	args := []string{"--install", release, "--namespace", ctx.String("namespace")}
 
 	// cli flag conversion
-	if isDebug(ctx, wf) {
+	if IsDebug(ctx, wf) {
 		args = append(args, "--debug")
 	}
 
 	// convert cicd --dryrun arg to helm dialect
-	if isDryRun(ctx, wf) {
+	if IsDryRun(ctx, wf) {
 		args = append(args, "--dry-run")
 	}
 

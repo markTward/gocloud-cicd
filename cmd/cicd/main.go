@@ -7,6 +7,7 @@ import (
 	"github.com/urfave/cli"
 )
 
+var configFile, branch string
 var debug, dryrun bool
 
 func main() {

@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/markTward/gocloud-cicd/cicd"
+	"github.com/markTward/gocloud-cicd"
 	"github.com/urfave/cli"
 )
 
@@ -61,38 +61,38 @@ func deploy(ctx *cli.Context) error {
 	// initialize configuration object
 	wf := cicd.New()
 	if err := cicd.Load(configFile, wf); err != nil {
-		logError(err)
+		cicd.LogError(err)
 		return err
 	}
-	logDebug(ctx, fmt.Sprintf("%v", spew.Sdump(wf)))
+	cicd.LogDebug(ctx, fmt.Sprintf("%v", spew.Sdump(wf)))
 
 	// initialize active Registry indicated by config and assert as Registrator
 	var activeRegistry interface{}
 	var err error
 	if activeRegistry, err = wf.GetActiveRegistry(); err != nil {
-		logError(err)
+		cicd.LogError(err)
 		return err
 	}
 	ar := activeRegistry.(cicd.Registrator)
 
 	// validate args and apply defaults
 	if err = validateDeployArgs(ctx, wf, ar); err != nil {
-		logError(err)
+		cicd.LogError(err)
 		return err
 	}
-	log.Println("deploy command args:", getAllFlags(ctx))
+	log.Println("deploy command args:", cicd.GetAllFlags(ctx))
 
 	// get active CD provider indicated by config and assert as Deployer
 	var activeCDProvider interface{}
 	if activeCDProvider, err = wf.GetActiveCDProvider(); err != nil {
-		logError(err)
+		cicd.LogError(err)
 		return err
 	}
 	ad := activeCDProvider.(cicd.Deployer)
 
 	// deploy using active CD provider
 	if err = ad.Deploy(ctx, wf); err != nil {
-		logError(err)
+		cicd.LogError(err)
 	}
 
 	return err
@@ -101,11 +101,11 @@ func deploy(ctx *cli.Context) error {
 func validateDeployArgs(ctx *cli.Context, wf *cicd.Workflow, ar cicd.Registrator) (err error) {
 
 	// handle globals from cli and/or workflow config
-	if isDebug(ctx, wf) {
+	if cicd.IsDebug(ctx, wf) {
 		debug = true
 	}
 
-	if isDryRun(ctx, wf) {
+	if cicd.IsDryRun(ctx, wf) {
 		dryrun = true
 	}
 
@@ -138,7 +138,7 @@ func validateDeployArgs(ctx *cli.Context, wf *cicd.Workflow, ar cicd.Registrator
 	}
 
 	if isNotExist(chartPath) {
-		logDebug(ctx, fmt.Sprintf("is not exist chartpath: %v", chartPath))
+		cicd.LogDebug(ctx, fmt.Sprintf("is not exist chartpath: %v", chartPath))
 		err = fmt.Errorf("chart path invalid: %v", chartPath)
 		return err
 	}

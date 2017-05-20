@@ -36,7 +36,7 @@ func (r *GCR) Authenticate(ctx *cli.Context, wf *Workflow) (err error) {
 	cmd := exec.Command("gcloud", "auth", "activate-service-account", "--key-file", r.Keyfile)
 	cmd.Stderr = &stderr
 
-	if !isDryRun(ctx, wf) {
+	if !IsDryRun(ctx, wf) {
 		log.Println("execute:", strings.Join(cmd.Args, " "))
 
 		if err = cmd.Run(); err != nil {
@@ -64,7 +64,7 @@ func (gcr *GCR) Push(ctx *cli.Context, wf *Workflow, images []string) (pushed []
 		cmd := exec.Command("gcloud", "docker", "--", "push", image)
 		cmd.Stderr = &stderr
 
-		if !isDryRun(ctx, wf) {
+		if !IsDryRun(ctx, wf) {
 			log.Println("execute: ", strings.Join(cmd.Args, " "))
 
 			if cmdOut, err = cmd.Output(); err != nil {
