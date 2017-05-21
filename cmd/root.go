@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/markTward/gocloud-cicd/cicd"
@@ -46,26 +48,39 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	RootCmd.PersistentFlags().StringVar(&configFile, "config", "", "config file (default is ./cicd.yaml)")
+	RootCmd.PersistentFlags().StringVar(&configFile, "config", "./cicd.yaml", "config file (default is ./cicd.yaml)")
 	RootCmd.PersistentFlags().BoolP("debug", "", false, "Show detailed debugging output")
 	RootCmd.PersistentFlags().BoolP("dryrun", "", false, "Show command output without execution")
 
-	viper.BindPFlag("dryrun", RootCmd.PersistentFlags().Lookup("dryrun"))
-	viper.BindPFlag("debug", RootCmd.PersistentFlags().Lookup("debug"))
+	viper.BindPFlag("isDryRun", RootCmd.PersistentFlags().Lookup("dryrun"))
+	viper.BindPFlag("isDebug", RootCmd.PersistentFlags().Lookup("debug"))
 
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	// initialize configuration object
-	wf = cicd.New()
-	if err := cicd.Load(configFile, wf); err != nil {
-		// cicd.LogError(err)
-		// return err
-		log.Println("initConfig err:", err)
+
+	if configFile != "" { // enable ability to specify config file via flag
+		viper.SetConfigFile(configFile)
+		viper.SetConfigName(strings.TrimSuffix(configFile, filepath.Ext(configFile)))
+	} else {
+		viper.SetConfigName("cicd") // name of config file (without extension)
 	}
+
+	viper.AddConfigPath(".") // adding home directory as first search path
+	viper.AutomaticEnv()     // read in environment variables that match
+
+	// If a config file is found, read it in.
+	if err := viper.ReadInConfig(); err == nil {
+		log.Println("Using config file:", viper.ConfigFileUsed())
+		err = viper.Unmarshal(&wf)
+		if err != nil {
+			log.Fatalf("unable to decode into struct: %v", err)
+		}
+	} else {
+		log.Fatalf("unable to read config file: %v", err)
+	}
+
 	cicd.LogDebug(RootCmd, fmt.Sprintf("Config: %v", spew.Sdump(wf)))
 
-	// cicd.LogDebug(ctx, fmt.Sprintf("%v", spew.Sdump(wf)))
-	log.Println("viper dryrun:", viper.GetBool("dryrun"))
 }
