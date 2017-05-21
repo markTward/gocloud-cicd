@@ -94,6 +94,8 @@ func initConfig() {
 		log.Println("operating in debug mode")
 	}
 
+	viper.Set("workflow", wf)
+	log.Println("viper workflow:", viper.Get("workflow"))
 	cicd.LogDebug(fmt.Sprintf("Config: %v", spew.Sdump(wf)))
 
 }
