@@ -58,7 +58,7 @@ func push(ccmd *cobra.Command, args []string) (err error) {
 	}
 
 	// authenticate credentials for registry
-	if err := ar.Authenticate(wf); err != nil {
+	if err := ar.Authenticate(); err != nil {
 		cicd.LogError(err)
 		return err
 	}
@@ -79,7 +79,7 @@ func push(ccmd *cobra.Command, args []string) (err error) {
 
 	// push tagged images
 	var result []string
-	if result, err = ar.Push(wf, images); err != nil {
+	if result, err = ar.Push(images); err != nil {
 		cicd.LogError(err)
 		return err
 	}

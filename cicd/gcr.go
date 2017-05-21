@@ -23,7 +23,7 @@ func (r *GCR) GetRepoURL() (repoURL string) {
 	return r.Url
 }
 
-func (r *GCR) Authenticate(wf *Workflow) (err error) {
+func (r *GCR) Authenticate() (err error) {
 	var stderr bytes.Buffer
 
 	if _, err = os.Stat(r.Keyfile); os.IsNotExist(err) {
@@ -53,7 +53,7 @@ func (r *GCR) Authenticate(wf *Workflow) (err error) {
 
 }
 
-func (gcr *GCR) Push(wf *Workflow, images []string) (pushed []string, err error) {
+func (gcr *GCR) Push(images []string) (pushed []string, err error) {
 	var stderr bytes.Buffer
 	var cmdOut []byte
 

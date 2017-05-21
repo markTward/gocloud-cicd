@@ -86,6 +86,7 @@ func initConfig() {
 		viper.BindPFlag("isDebug", RootCmd.PersistentFlags().Lookup("debug"))
 	}
 
+	// broadcast global settigns
 	if viper.GetBool("isDryRun") {
 		log.Println("operating in dryrun mode")
 	}
@@ -94,8 +95,6 @@ func initConfig() {
 		log.Println("operating in debug mode")
 	}
 
-	viper.Set("workflow", wf)
-	log.Println("viper workflow:", viper.Get("workflow"))
 	cicd.LogDebug(fmt.Sprintf("Config: %v", spew.Sdump(wf)))
 
 }

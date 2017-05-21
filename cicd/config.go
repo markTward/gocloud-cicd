@@ -72,8 +72,8 @@ type Provider struct {
 
 type Registrator interface {
 	IsRegistryValid() error
-	Push(*Workflow, []string) ([]string, error)
-	Authenticate(*Workflow) error
+	Push([]string) ([]string, error)
+	Authenticate() error
 	GetRepoURL() string
 }
 
