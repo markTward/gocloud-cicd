@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
 type Docker struct {
@@ -20,7 +20,7 @@ type Docker struct {
 	Url         string
 }
 
-func (r *Docker) Authenticate(ctx *cli.Context, wf *Workflow) (err error) {
+func (r *Docker) Authenticate(ctx *cobra.Command, wf *Workflow) (err error) {
 	var stderr bytes.Buffer
 	var cmdOut []byte
 
@@ -60,7 +60,7 @@ func (r *Docker) IsRegistryValid() (err error) {
 	return err
 }
 
-func (docker *Docker) Push(ctx *cli.Context, wf *Workflow, images []string) (pushed []string, err error) {
+func (docker *Docker) Push(ctx *cobra.Command, wf *Workflow, images []string) (pushed []string, err error) {
 	var stderr bytes.Buffer
 	var cmdOut []byte
 

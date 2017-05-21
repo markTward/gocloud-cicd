@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
 type GCR struct {
@@ -25,7 +25,7 @@ func (r *GCR) GetRepoURL() (repoURL string) {
 	return r.Url
 }
 
-func (r *GCR) Authenticate(ctx *cli.Context, wf *Workflow) (err error) {
+func (r *GCR) Authenticate(ctx *cobra.Command, wf *Workflow) (err error) {
 	var stderr bytes.Buffer
 
 	if _, err = os.Stat(r.Keyfile); os.IsNotExist(err) {
@@ -55,7 +55,7 @@ func (r *GCR) Authenticate(ctx *cli.Context, wf *Workflow) (err error) {
 
 }
 
-func (gcr *GCR) Push(ctx *cli.Context, wf *Workflow, images []string) (pushed []string, err error) {
+func (gcr *GCR) Push(ctx *cobra.Command, wf *Workflow, images []string) (pushed []string, err error) {
 	var stderr bytes.Buffer
 	var cmdOut []byte
 
