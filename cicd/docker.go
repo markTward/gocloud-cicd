@@ -37,7 +37,7 @@ func (r *Docker) Authenticate(ctx *cobra.Command, wf *Workflow) (err error) {
 	}
 
 	cmd := exec.Command("docker", "login", "-u", dockerUser, "-p", dockerPass)
-	if !IsDryRun(ctx, wf) {
+	if !IsDryRun() {
 		cmd.Stderr = &stderr
 		log.Println("execute:", strings.Join(cmd.Args[:4], " "), " -p ********")
 
@@ -69,7 +69,7 @@ func (docker *Docker) Push(ctx *cobra.Command, wf *Workflow, images []string) (p
 		cmd := exec.Command("docker", "push", image)
 		cmd.Stderr = &stderr
 
-		if !IsDryRun(ctx, wf) {
+		if !IsDryRun() {
 			log.Println("execute:", strings.Join(cmd.Args, " "))
 
 			if cmdOut, err = cmd.Output(); err != nil {

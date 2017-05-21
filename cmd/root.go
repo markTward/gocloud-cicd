@@ -18,8 +18,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/markTward/gocloud-cicd/cicd"
@@ -52,9 +50,6 @@ func init() {
 	RootCmd.PersistentFlags().BoolP("debug", "", false, "Show detailed debugging output")
 	RootCmd.PersistentFlags().BoolP("dryrun", "", false, "Show command output without execution")
 
-	viper.BindPFlag("isDryRun", RootCmd.PersistentFlags().Lookup("dryrun"))
-	viper.BindPFlag("isDebug", RootCmd.PersistentFlags().Lookup("debug"))
-
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -62,13 +57,12 @@ func initConfig() {
 
 	if configFile != "" { // enable ability to specify config file via flag
 		viper.SetConfigFile(configFile)
-		viper.SetConfigName(strings.TrimSuffix(configFile, filepath.Ext(configFile)))
 	} else {
+		viper.AddConfigPath(".")    // adding home directory as first search path
 		viper.SetConfigName("cicd") // name of config file (without extension)
 	}
 
-	viper.AddConfigPath(".") // adding home directory as first search path
-	viper.AutomaticEnv()     // read in environment variables that match
+	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
@@ -81,6 +75,25 @@ func initConfig() {
 		log.Fatalf("unable to read config file: %v", err)
 	}
 
-	cicd.LogDebug(RootCmd, fmt.Sprintf("Config: %v", spew.Sdump(wf)))
+	// override config file settings
+	viper.SetDefault("isDryRun", wf.Config.Dryrun)
+	if RootCmd.PersistentFlags().Lookup("dryrun").Changed {
+		viper.BindPFlag("isDryRun", RootCmd.PersistentFlags().Lookup("dryrun"))
+	}
+
+	viper.SetDefault("isDebug", wf.Config.Debug)
+	if RootCmd.PersistentFlags().Lookup("debug").Changed {
+		viper.BindPFlag("isDebug", RootCmd.PersistentFlags().Lookup("debug"))
+	}
+
+	if viper.GetBool("isDryRun") {
+		log.Println("operating in dryrun mode")
+	}
+
+	if viper.GetBool("isDebug") {
+		log.Println("operating in debug mode")
+	}
+
+	cicd.LogDebug(fmt.Sprintf("Config: %v", spew.Sdump(wf)))
 
 }

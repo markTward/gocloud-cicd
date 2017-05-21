@@ -35,10 +35,10 @@ func init() {
 
 }
 
-func push(ctx *cobra.Command, args []string) (err error) {
+func push(ccmd *cobra.Command, args []string) (err error) {
 
 	// validate args
-	if err := validatePushArgs(ctx, wf); err != nil {
+	if err := validatePushArgs(); err != nil {
 		cicd.LogError(err)
 		return err
 	}
@@ -58,22 +58,20 @@ func push(ctx *cobra.Command, args []string) (err error) {
 	}
 
 	// authenticate credentials for registry
-	if err := ar.Authenticate(ctx, wf); err != nil {
+	if err := ar.Authenticate(wf); err != nil {
 		cicd.LogError(err)
 		return err
 	}
 
 	// make list of images to tag
 	var images []string
-	log.Println("calling makeTagList branch: ", branch)
-	if images = makeTagList(ctx, ar.GetRepoURL(), baseImage, event, branch, pr); len(images) == 0 {
+	if images = makeTagList(ar.GetRepoURL()); len(images) == 0 {
 		cicd.LogError(fmt.Errorf("no images to tag: %v", images))
 		return err
 	}
-	log.Println("after maketaglist iamges:", images, len(images))
 
 	// tag images
-	if err := tagImages(baseImage, images); err != nil {
+	if err = tagImages(images); err != nil {
 		cicd.LogError(err)
 		return err
 	}
@@ -81,8 +79,7 @@ func push(ctx *cobra.Command, args []string) (err error) {
 
 	// push tagged images
 	var result []string
-	log.Println("about to call gcr push with parent context", ctx.Parent().Name())
-	if result, err = ar.Push(ctx.Parent(), wf, images); err != nil {
+	if result, err = ar.Push(wf, images); err != nil {
 		cicd.LogError(err)
 		return err
 	}
@@ -90,14 +87,11 @@ func push(ctx *cobra.Command, args []string) (err error) {
 	return err
 }
 
-func makeTagList(ctx *cobra.Command, repoURL string, refImage string, event string, branch string, pr string) (images []string) {
-
-	cicd.LogDebug(ctx, fmt.Sprintf("makeTagList args: repo url: %v, image: %v, event type: %v, branch: %v, pull request id: %v",
-		repoURL, refImage, event, branch, pr))
+func makeTagList(repoURL string) (images []string) {
 
 	// tag additional images based on build event type
-	tagSep := strings.Index(refImage, ":")
-	commitImage := repoURL + refImage[tagSep:]
+	tagSep := strings.Index(baseImage, ":")
+	commitImage := repoURL + baseImage[tagSep:]
 
 	images = append(images, commitImage)
 
@@ -114,13 +108,13 @@ func makeTagList(ctx *cobra.Command, repoURL string, refImage string, event stri
 	return images
 }
 
-func tagImages(src string, targets []string) (err error) {
+func tagImages(images []string) (err error) {
 	var stderr bytes.Buffer
 
-	for _, target := range targets {
-		cmd := exec.Command("docker", "tag", src, target)
+	for _, image := range images {
+		cmd := exec.Command("docker", "tag", baseImage, image)
 		cmd.Stderr = &stderr
-		log.Printf("docker tag from %v to %v", src, target)
+		log.Printf("docker tag from %v to %v", baseImage, image)
 
 		if err = cmd.Run(); err != nil {
 			err = fmt.Errorf("%v", stderr.String())
@@ -131,7 +125,7 @@ func tagImages(src string, targets []string) (err error) {
 	return err
 }
 
-func validatePushArgs(ctx *cobra.Command, wf *cicd.Workflow) (err error) {
+func validatePushArgs() (err error) {
 
 	switch {
 	case baseImage == "":

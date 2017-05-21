@@ -72,8 +72,8 @@ type Provider struct {
 
 type Registrator interface {
 	IsRegistryValid() error
-	Push(*cobra.Command, *Workflow, []string) ([]string, error)
-	Authenticate(*cobra.Command, *Workflow) error
+	Push(*Workflow, []string) ([]string, error)
+	Authenticate(*Workflow) error
 	GetRepoURL() string
 }
 
