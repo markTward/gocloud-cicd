@@ -6,7 +6,6 @@ import (
 	"log"
 	"strings"
 
-	"github.com/spf13/cobra"
 	// "github.com/urfave/cli"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -78,7 +77,7 @@ type Registrator interface {
 }
 
 type Deployer interface {
-	Deploy(*cobra.Command, *Workflow) error
+	Deploy(*Workflow) error
 }
 
 func New() *Workflow {

@@ -10,7 +10,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
@@ -26,7 +25,7 @@ type Helm struct {
 	}
 }
 
-func (h *Helm) Deploy(ctx *cobra.Command, wf *Workflow) (err error) {
+func (h *Helm) Deploy(wf *Workflow) (err error) {
 
 	// create helm release name
 	release := viper.GetString("service") + "-" + viper.GetString("branch")

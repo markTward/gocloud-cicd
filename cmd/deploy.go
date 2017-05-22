@@ -67,7 +67,7 @@ func deploy(ctx *cobra.Command, args []string) error {
 	ad := activeCDProvider.(cicd.Deployer)
 
 	// deploy using active CD provider
-	if err = ad.Deploy(ctx, wf); err != nil {
+	if err = ad.Deploy(wf); err != nil {
 		cicd.LogError(err)
 	}
 
