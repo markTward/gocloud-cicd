@@ -15,10 +15,12 @@ var event, baseImage, pr string
 
 // pushCmd represents the push command
 var pushCmd = &cobra.Command{
-	Use:   "push",
-	Short: "push a list of containers to a registry",
-	Long:  "push a list of containers to a registry",
-	RunE:  push,
+	Use:           "push",
+	Short:         "push a list of containers to a registry",
+	Long:          "push a list of containers to a registry",
+	SilenceUsage:  true,
+	SilenceErrors: true,
+	RunE:          push,
 }
 
 func init() {

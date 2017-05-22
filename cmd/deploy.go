@@ -13,10 +13,12 @@ var buildTag, containerRepo, serviceName, namespace, chartPath string
 
 // deployCmd represents the deploy command
 var deployCmd = &cobra.Command{
-	Use:   "deploy",
-	Short: "deploy containerzied applications",
-	Long:  "deploy containerzied applications",
-	RunE:  deploy,
+	Use:           "deploy",
+	Short:         "deploy containerzied applications",
+	Long:          "deploy containerzied applications",
+	SilenceUsage:  true,
+	SilenceErrors: true,
+	RunE:          deploy,
 }
 
 func init() {
@@ -52,7 +54,7 @@ func deploy(ctx *cobra.Command, args []string) error {
 
 	// validate args and apply defaults
 	if err = validateDeployArgs(ctx, wf, ar); err != nil {
-		cicd.LogError(err)
+		// cicd.LogError(err)
 		return err
 	}
 
@@ -102,8 +104,9 @@ func validateDeployArgs(ctx *cobra.Command, wf *cicd.Workflow, ar cicd.Registrat
 		}
 	}
 
-	if isNotExist(chartPath) {
-		cicd.LogDebug(fmt.Sprintf("is not exist chartpath: %v", chartPath))
+	// test existence of chart path
+	_, err = os.Stat(chartPath)
+	if os.IsNotExist(err) {
 		err = fmt.Errorf("chart path invalid: %v", chartPath)
 		return err
 	}
@@ -127,9 +130,4 @@ func validateDeployArgs(ctx *cobra.Command, wf *cicd.Workflow, ar cicd.Registrat
 	}
 
 	return err
-}
-
-func isNotExist(f string) bool {
-	_, err := os.Stat(f)
-	return os.IsNotExist(err)
 }
