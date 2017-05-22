@@ -1,12 +1,17 @@
 package cicd
 
 import (
+	"bytes"
+	"fmt"
 	"html/template"
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
+	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 type Helm struct {
@@ -22,67 +27,67 @@ type Helm struct {
 }
 
 func (h *Helm) Deploy(ctx *cobra.Command, wf *Workflow) (err error) {
-	log.Println("deploy:", ctx, wf)
-	// // TODO: release construction should be project specific rule.  config rules?
-	// release := ctx.Find(["service"]) + "-" + ctx.Find(["branch"]) ctx.Fin
-	//
-	// // helm required flags
-	// args := []string{"--install", release, "--namespace", ctx.Find(["namespace"])}
-	//
-	// // cli flag conversion
-	// if IsDebug(ctx, wf) {
-	// 	args = append(args, "--debug")
-	// }
-	//
-	// // convert cicd --dryrun arg to helm dialect
-	// if IsDryRun(ctx, wf) {
-	// 	args = append(args, "--dry-run")
-	// }
-	//
-	// // write runtime helm --values <file> using when available in config  otherwise create/remove a TempFile
-	// outFile := wf.Provider.CD.Helm.Values.Output
-	// var valuesFile *os.File
-	// switch {
-	// case outFile == "":
-	// 	valuesFile, err = ioutil.TempFile("", "runtime_values.yaml.")
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// 	defer os.Remove(valuesFile.Name())
-	// default:
-	// 	valuesFile, err = os.Create(outFile)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	defer valuesFile.Close()
-	// }
-	//
-	// // render values file from template
-	// err = renderHelmValuesFile(wf, valuesFile, ctx.Find(["repo"]), ctx.Find(["url"]))
-	// if err != nil {
-	// 	return fmt.Errorf("renderHelmValuesFile(): %v", err)
-	// }
-	//
-	// // join flags and positional args
-	// args = append(args, "--values", valuesFile.Name())
-	// args = append(args, ctx.String("chart"))
-	//
-	// var stderr bytes.Buffer
-	// var cmdOut []byte
-	//
-	// // prepend subcommand deploy to args
-	// args = append([]string{"upgrade"}, args...)
-	// cmd := exec.Command("helm", args...)
-	// log.Println("execute: ", strings.Join(cmd.Args, " "))
-	//
-	// // execute helm command
-	// cmd.Stderr = &stderr
-	// if cmdOut, err = cmd.Output(); err != nil {
-	// 	logCmdOutput(stderr.Bytes())
-	// 	err = fmt.Errorf("%v", stderr.String())
-	// } else {
-	// 	logCmdOutput(cmdOut)
-	// }
+
+	// create helm release name
+	release := viper.GetString("service") + "-" + viper.GetString("branch")
+
+	// helm required flags
+	args := []string{"--install", release, "--namespace", viper.GetString("namespace")}
+
+	// cli flag conversion
+	if IsDebug() {
+		args = append(args, "--debug")
+	}
+
+	// convert cicd --dryrun arg to helm dialect
+	if IsDryRun() {
+		args = append(args, "--dry-run")
+	}
+
+	// write runtime helm --values <file> using when available in config  otherwise create/remove a TempFile
+	outFile := wf.Provider.CD.Helm.Values.Output
+	var valuesFile *os.File
+	switch {
+	case outFile == "":
+		valuesFile, err = ioutil.TempFile("", "runtime_values.yaml.")
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer os.Remove(valuesFile.Name())
+	default:
+		valuesFile, err = os.Create(outFile)
+		if err != nil {
+			return err
+		}
+		defer valuesFile.Close()
+	}
+
+	// render values file from template
+	err = renderHelmValuesFile(wf, valuesFile, viper.GetString("repo"), viper.GetString("tag"))
+	if err != nil {
+		return fmt.Errorf("renderHelmValuesFile(): %v", err)
+	}
+
+	// join flags and positional args
+	args = append(args, "--values", valuesFile.Name())
+	args = append(args, viper.GetString("chart"))
+
+	var stderr bytes.Buffer
+	var cmdOut []byte
+
+	// prepend subcommand deploy to args
+	args = append([]string{"upgrade"}, args...)
+	cmd := exec.Command("helm", args...)
+	log.Println("execute: ", strings.Join(cmd.Args, " "))
+
+	// execute helm command
+	cmd.Stderr = &stderr
+	if cmdOut, err = cmd.Output(); err != nil {
+		logCmdOutput(stderr.Bytes())
+		err = fmt.Errorf("%v", stderr.String())
+	} else {
+		logCmdOutput(cmdOut)
+	}
 
 	return err
 }

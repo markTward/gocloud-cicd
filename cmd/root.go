@@ -25,7 +25,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var configFile string
+var configFile, branch string
 var dryrun, debug bool
 var wf *cicd.Workflow
 

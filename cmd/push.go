@@ -9,10 +9,9 @@ import (
 
 	"github.com/markTward/gocloud-cicd/cicd"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
-var branch, event, baseImage, pr string
+var event, baseImage, pr string
 
 // pushCmd represents the push command
 var pushCmd = &cobra.Command{
@@ -27,9 +26,6 @@ func init() {
 	pushCmd.Flags().StringVarP(&event, "event", "e", "push", "build event type from list: push, pull_request")
 	pushCmd.Flags().StringVarP(&baseImage, "image", "i", "", "built image used as basis for tagging (required)")
 	pushCmd.Flags().StringVarP(&pr, "pr", "", "", "pull request number (required when event type is pull_request)")
-
-	viper.BindPFlag("branch", pushCmd.Flags().Lookup("branch"))
-	viper.BindPFlag("url", pushCmd.PersistentFlags().Lookup("dryrun"))
 
 	RootCmd.AddCommand(pushCmd)
 

@@ -1,52 +1,135 @@
-// Copyright © 2017 NAME HERE <EMAIL ADDRESS>
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package cmd
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/markTward/gocloud-cicd/cicd"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
+
+var buildTag, containerRepo, serviceName, namespace, chartPath string
 
 // deployCmd represents the deploy command
 var deployCmd = &cobra.Command{
 	Use:   "deploy",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: Work your own magic here
-		fmt.Println("deploy called")
-	},
+	Short: "deploy containerzied applications",
+	Long:  "deploy containerzied applications",
+	RunE:  deploy,
 }
 
 func init() {
+
+	deployCmd.Flags().StringVarP(&branch, "branch", "b", "", "branch name for tagging")
+	deployCmd.Flags().StringVarP(&chartPath, "chart", "", "", "path to helm charts")
+	deployCmd.Flags().StringVarP(&containerRepo, "repo", "r", "", "container repository url")
+	deployCmd.Flags().StringVarP(&namespace, "namespace", "n", "", "k8s namespace for service")
+	deployCmd.Flags().StringVarP(&serviceName, "service", "s", "", "app/service name")
+	deployCmd.Flags().StringVarP(&buildTag, "tag", "t", "", "existing image tag used as basis for further tags (required)")
+
+	viper.BindPFlag("branch", deployCmd.Flags().Lookup("branch"))
+	viper.BindPFlag("chart", deployCmd.Flags().Lookup("chart"))
+	viper.BindPFlag("repo", deployCmd.Flags().Lookup("repo"))
+	viper.BindPFlag("namespace", deployCmd.Flags().Lookup("namespace"))
+	viper.BindPFlag("service", deployCmd.Flags().Lookup("service"))
+	viper.BindPFlag("tag", deployCmd.Flags().Lookup("tag"))
+
 	RootCmd.AddCommand(deployCmd)
 
-	// Here you will define your flags and configuration settings.
+}
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// deployCmd.PersistentFlags().String("foo", "", "A help for foo")
+func deploy(ctx *cobra.Command, args []string) error {
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// deployCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// initialize active Registry indicated by config and assert as Registrator
+	var activeRegistry interface{}
+	var err error
+	if activeRegistry, err = wf.GetActiveRegistry(); err != nil {
+		cicd.LogError(err)
+		return err
+	}
+	ar := activeRegistry.(cicd.Registrator)
 
+	// validate args and apply defaults
+	if err = validateDeployArgs(ctx, wf, ar); err != nil {
+		cicd.LogError(err)
+		return err
+	}
+
+	// get active CD provider indicated by config and assert as Deployer
+	var activeCDProvider interface{}
+	if activeCDProvider, err = wf.GetActiveCDProvider(); err != nil {
+		cicd.LogError(err)
+		return err
+	}
+	ad := activeCDProvider.(cicd.Deployer)
+
+	// deploy using active CD provider
+	if err = ad.Deploy(ctx, wf); err != nil {
+		cicd.LogError(err)
+	}
+
+	return err
+}
+
+func validateDeployArgs(ctx *cobra.Command, wf *cicd.Workflow, ar cicd.Registrator) (err error) {
+
+	//
+	if buildTag == "" {
+		err = fmt.Errorf("%v", "build tag a required value")
+		return err
+	}
+
+	if branch == "" {
+		err = fmt.Errorf("%v", "branch a required value")
+	}
+
+	if namespace == "" {
+		if ns := wf.Provider.CD.Helm.Namespace; ns == "" {
+			err = fmt.Errorf("%v", "namespace required when not defined in cicd.yaml")
+			return err
+		} else {
+			namespace = ns
+		}
+	}
+
+	if chartPath == "" {
+		if cp := wf.Provider.CD.Helm.Chartpath; cp == "" {
+			err = fmt.Errorf("%v", "chart path required when not defined in cicd.yaml")
+			return err
+		} else {
+			chartPath = cp
+		}
+	}
+
+	if isNotExist(chartPath) {
+		cicd.LogDebug(fmt.Sprintf("is not exist chartpath: %v", chartPath))
+		err = fmt.Errorf("chart path invalid: %v", chartPath)
+		return err
+	}
+
+	if containerRepo == "" {
+		if cr := ar.GetRepoURL(); cr == "" {
+			err = fmt.Errorf("%v\n", "repoitory url required when not defined in cicd.yaml")
+			return err
+		} else {
+			containerRepo = cr
+		}
+	}
+
+	if serviceName == "" {
+		if svc := wf.App.Name; svc == "" {
+			err = fmt.Errorf("%v", "service name required when not defined in cicd.yaml")
+			return err
+		} else {
+			serviceName = svc
+		}
+	}
+
+	return err
+}
+
+func isNotExist(f string) bool {
+	_, err := os.Stat(f)
+	return os.IsNotExist(err)
 }
