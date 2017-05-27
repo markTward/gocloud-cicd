@@ -37,40 +37,34 @@ func push(ccmd *cobra.Command, args []string) (err error) {
 
 	// validate args
 	if err := validatePushArgs(); err != nil {
-		cicd.LogError(err)
 		return err
 	}
 
 	// initialize active Registry indicated by config and assert as Registrator
 	var activeRegistry interface{}
 	if activeRegistry, err = wf.GetActiveRegistry(); err != nil {
-		cicd.LogError(err)
 		return err
 	}
 	ar := activeRegistry.(cicd.Registrator)
 
 	// validate registry has required values
 	if err := ar.IsRegistryValid(); err != nil {
-		cicd.LogError(err)
 		return err
 	}
 
 	// authenticate credentials for registry
 	if err := ar.Authenticate(); err != nil {
-		cicd.LogError(err)
 		return err
 	}
 
 	// make list of images to tag
 	var images []string
 	if images = makeTagList(ar.GetRepoURL()); len(images) == 0 {
-		cicd.LogError(fmt.Errorf("no images to tag: %v", images))
-		return err
+		return fmt.Errorf("no images to tag: %v", images)
 	}
 
 	// tag images
 	if err = tagImages(images); err != nil {
-		cicd.LogError(err)
 		return err
 	}
 	log.Println("tagged images:", images)
@@ -78,7 +72,6 @@ func push(ccmd *cobra.Command, args []string) (err error) {
 	// push tagged images
 	var result []string
 	if result, err = ar.Push(images); err != nil {
-		cicd.LogError(err)
 		return err
 	}
 	log.Println("pushed images:", result)
@@ -112,11 +105,15 @@ func tagImages(images []string) (err error) {
 	for _, image := range images {
 		cmd := exec.Command("docker", "tag", baseImage, image)
 		cmd.Stderr = &stderr
-		log.Printf("docker tag from %v to %v", baseImage, image)
 
-		if err = cmd.Run(); err != nil {
-			err = fmt.Errorf("%v", stderr.String())
-			break
+		if !cicd.IsDryRun() {
+			log.Printf("docker tag from %v to %v", baseImage, image)
+			if err = cmd.Run(); err != nil {
+				err = fmt.Errorf("%v", stderr.String())
+				break
+			}
+		} else {
+			log.Println("dryrun:", strings.Join(cmd.Args, " "))
 		}
 	}
 

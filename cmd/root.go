@@ -24,6 +24,7 @@ var RootCmd = &cobra.Command{
 
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
+		cicd.LogError(err)
 		fmt.Println(err)
 		os.Exit(-1)
 	}
@@ -61,7 +62,7 @@ func initConfig() {
 		log.Fatalf("unable to read config file: %v", err)
 	}
 
-	// override config file settings
+	// override default config file settings
 	viper.SetDefault("isDryRun", wf.Config.Dryrun)
 	if RootCmd.PersistentFlags().Lookup("dryrun").Changed {
 		viper.BindPFlag("isDryRun", RootCmd.PersistentFlags().Lookup("dryrun"))
