@@ -47,49 +47,40 @@ func deploy(ctx *cobra.Command, args []string) error {
 	var activeRegistry interface{}
 	var err error
 	if activeRegistry, err = wf.GetActiveRegistry(); err != nil {
-		cicd.LogError(err)
 		return err
 	}
 	ar := activeRegistry.(cicd.Registrator)
 
 	// validate args and apply defaults
 	if err = validateDeployArgs(ctx, wf, ar); err != nil {
-		// cicd.LogError(err)
 		return err
 	}
 
 	// get active CD provider indicated by config and assert as Deployer
 	var activeCDProvider interface{}
 	if activeCDProvider, err = wf.GetActiveCDProvider(); err != nil {
-		cicd.LogError(err)
 		return err
 	}
 	ad := activeCDProvider.(cicd.Deployer)
 
 	// deploy using active CD provider
-	if err = ad.Deploy(wf); err != nil {
-		cicd.LogError(err)
-	}
-
+	err = ad.Deploy(wf)
 	return err
 }
 
 func validateDeployArgs(ctx *cobra.Command, wf *cicd.Workflow, ar cicd.Registrator) (err error) {
 
-	//
 	if buildTag == "" {
-		err = fmt.Errorf("%v", "build tag a required value")
-		return err
+		return fmt.Errorf("%v", "build tag a required value")
 	}
 
 	if branch == "" {
-		err = fmt.Errorf("%v", "branch a required value")
+		return fmt.Errorf("%v", "branch a required value")
 	}
 
 	if namespace == "" {
 		if ns := wf.Provider.CD.Helm.Namespace; ns == "" {
-			err = fmt.Errorf("%v", "namespace required when not defined in cicd.yaml")
-			return err
+			return fmt.Errorf("%v", "namespace required when not defined in cicd.yaml")
 		} else {
 			namespace = ns
 		}
@@ -97,8 +88,7 @@ func validateDeployArgs(ctx *cobra.Command, wf *cicd.Workflow, ar cicd.Registrat
 
 	if chartPath == "" {
 		if cp := wf.Provider.CD.Helm.Chartpath; cp == "" {
-			err = fmt.Errorf("%v", "chart path required when not defined in cicd.yaml")
-			return err
+			return fmt.Errorf("%v", "chart path required when not defined in cicd.yaml")
 		} else {
 			chartPath = cp
 		}
@@ -107,14 +97,12 @@ func validateDeployArgs(ctx *cobra.Command, wf *cicd.Workflow, ar cicd.Registrat
 	// test existence of chart path
 	_, err = os.Stat(chartPath)
 	if os.IsNotExist(err) {
-		err = fmt.Errorf("chart path invalid: %v", chartPath)
-		return err
+		return fmt.Errorf("chart path invalid: %v", chartPath)
 	}
 
 	if containerRepo == "" {
 		if cr := ar.GetRepoURL(); cr == "" {
-			err = fmt.Errorf("%v\n", "repoitory url required when not defined in cicd.yaml")
-			return err
+			return fmt.Errorf("%v\n", "repoitory url required when not defined in cicd.yaml")
 		} else {
 			containerRepo = cr
 		}
@@ -122,8 +110,7 @@ func validateDeployArgs(ctx *cobra.Command, wf *cicd.Workflow, ar cicd.Registrat
 
 	if serviceName == "" {
 		if svc := wf.App.Name; svc == "" {
-			err = fmt.Errorf("%v", "service name required when not defined in cicd.yaml")
-			return err
+			return fmt.Errorf("%v", "service name required when not defined in cicd.yaml")
 		} else {
 			serviceName = svc
 		}

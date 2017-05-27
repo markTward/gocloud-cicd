@@ -39,8 +39,10 @@ func (h *Helm) Deploy(wf *Workflow) (err error) {
 	}
 
 	// convert cicd --dryrun arg to helm dialect
+	cmdMode := "execute:"
 	if IsDryRun() {
 		args = append(args, "--dry-run")
+		cmdMode = "dryrun:"
 	}
 
 	// write runtime helm --values <file> using when available in config  otherwise create/remove a TempFile
@@ -77,7 +79,7 @@ func (h *Helm) Deploy(wf *Workflow) (err error) {
 	// prepend subcommand deploy to args
 	args = append([]string{"upgrade"}, args...)
 	cmd := exec.Command("helm", args...)
-	log.Println("execute: ", strings.Join(cmd.Args, " "))
+	log.Println(cmdMode, strings.Join(cmd.Args, " "))
 
 	// execute helm command
 	cmd.Stderr = &stderr
