@@ -17,7 +17,7 @@ var wf *cicd.Workflow
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   "cicd",
+	Use:   "gocloud-cicd",
 	Short: "Continuous Intergration and Deployment Tools",
 	Long:  "Continuous Intergration and Deployment Tools",
 }
