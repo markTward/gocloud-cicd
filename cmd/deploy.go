@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var buildTag, containerRepo, serviceName, namespace, chartPath string
+var buildTag, containerRepo, serviceName, namespace, chartPath, template string
 
 // deployCmd represents the deploy command
 var deployCmd = &cobra.Command{
@@ -29,6 +29,7 @@ func init() {
 	deployCmd.Flags().StringVarP(&namespace, "namespace", "n", "", "k8s namespace for service")
 	deployCmd.Flags().StringVarP(&serviceName, "service", "s", "", "app/service name")
 	deployCmd.Flags().StringVarP(&buildTag, "tag", "t", "", "existing image tag used as basis for further tags (required)")
+	deployCmd.Flags().StringVarP(&template, "template", "", "", "helm chart runtime values template for image repository:tag")
 
 	viper.BindPFlag("branch", deployCmd.Flags().Lookup("branch"))
 	viper.BindPFlag("chart", deployCmd.Flags().Lookup("chart"))
@@ -36,6 +37,7 @@ func init() {
 	viper.BindPFlag("namespace", deployCmd.Flags().Lookup("namespace"))
 	viper.BindPFlag("service", deployCmd.Flags().Lookup("service"))
 	viper.BindPFlag("tag", deployCmd.Flags().Lookup("tag"))
+	viper.BindPFlag("template", deployCmd.Flags().Lookup("template"))
 
 	RootCmd.AddCommand(deployCmd)
 
@@ -114,6 +116,20 @@ func validateDeployArgs(ctx *cobra.Command, wf *cicd.Workflow, ar cicd.Registrat
 		} else {
 			serviceName = svc
 		}
+	}
+
+	if template == "" {
+		if tpl := wf.Provider.CD.Helm.Values.Template; tpl == "" {
+			return fmt.Errorf("%v", "helm values template required when not defined in cicd.yaml")
+		} else {
+			template = tpl
+		}
+	}
+
+	// test existence of helm values template
+	_, err = os.Stat(template)
+	if os.IsNotExist(err) {
+		return fmt.Errorf("helm values template path invalid: %v", template)
 	}
 
 	return err
