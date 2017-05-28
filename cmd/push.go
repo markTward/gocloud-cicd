@@ -9,6 +9,7 @@ import (
 
 	"github.com/markTward/gocloud-cicd/cicd"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var event, baseImage, pr string
@@ -106,14 +107,13 @@ func tagImages(images []string) (err error) {
 		cmd := exec.Command("docker", "tag", baseImage, image)
 		cmd.Stderr = &stderr
 
+		log.Println(viper.GetString("cmdMode"), strings.Join(cmd.Args, " "))
+
 		if !cicd.IsDryRun() {
-			log.Printf("docker tag from %v to %v", baseImage, image)
 			if err = cmd.Run(); err != nil {
 				err = fmt.Errorf("%v", stderr.String())
 				break
 			}
-		} else {
-			log.Println("dryrun:", strings.Join(cmd.Args, " "))
 		}
 	}
 

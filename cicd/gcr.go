@@ -61,6 +61,7 @@ func (gcr *GCR) Push(images []string) (pushed []string, err error) {
 		cmd.Stderr = &stderr
 
 		log.Println(viper.GetString("cmdMode"), strings.Join(cmd.Args, " "))
+
 		if !IsDryRun() {
 			if cmdOut, err = cmd.Output(); err != nil {
 				logCmdOutput(stderr.Bytes())

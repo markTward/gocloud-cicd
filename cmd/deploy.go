@@ -104,7 +104,7 @@ func validateDeployArgs(wf *cicd.Workflow, ar cicd.Registrator) (err error) {
 
 	if containerRepo == "" {
 		if cr := ar.GetRepoURL(); cr == "" {
-			return fmt.Errorf("%v\n", "repoitory url required when not defined in cicd.yaml")
+			return fmt.Errorf("%v", "repoitory url required when not defined in cicd.yaml")
 		} else {
 			containerRepo = cr
 		}

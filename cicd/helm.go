@@ -77,6 +77,7 @@ func (h *Helm) Deploy(wf *Workflow) (err error) {
 	// prepend subcommand deploy to args
 	args = append([]string{"upgrade"}, args...)
 	cmd := exec.Command("helm", args...)
+
 	log.Println(viper.GetString("cmdMode"), strings.Join(cmd.Args, " "))
 
 	// execute helm command
