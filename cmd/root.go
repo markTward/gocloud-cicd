@@ -74,7 +74,9 @@ func initConfig() {
 	}
 
 	// broadcast global settigns
+	viper.SetDefault("cmdMode", "execute:")
 	if viper.GetBool("isDryRun") {
+		viper.Set("cmdMode", "dryrun:")
 		log.Println("operating in dryrun mode")
 	}
 

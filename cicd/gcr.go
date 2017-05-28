@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/spf13/viper"
 )
 
 type GCR struct {
@@ -34,19 +36,15 @@ func (r *GCR) Authenticate() (err error) {
 	cmd := exec.Command("gcloud", "auth", "activate-service-account", "--key-file", r.Keyfile)
 	cmd.Stderr = &stderr
 
+	log.Println(viper.GetString("cmdMode"), strings.Join(cmd.Args, " "))
 	if !IsDryRun() {
-		log.Println("execute:", strings.Join(cmd.Args, " "))
-
 		if err = cmd.Run(); err != nil {
 			logCmdOutput(stderr.Bytes())
 			err = fmt.Errorf("%v", stderr.String())
 			return err
 		}
-
 		// BUG: gcloud returning successful result over stderr (why?)
 		logCmdOutput(stderr.Bytes())
-	} else {
-		log.Println("dryrun:", strings.Join(cmd.Args, " "))
 	}
 
 	return err
@@ -62,9 +60,8 @@ func (gcr *GCR) Push(images []string) (pushed []string, err error) {
 		cmd := exec.Command("gcloud", "docker", "--", "push", image)
 		cmd.Stderr = &stderr
 
+		log.Println(viper.GetString("cmdMode"), strings.Join(cmd.Args, " "))
 		if !IsDryRun() {
-			log.Println("execute: ", strings.Join(cmd.Args, " "))
-
 			if cmdOut, err = cmd.Output(); err != nil {
 				logCmdOutput(stderr.Bytes())
 				err = fmt.Errorf("%v: %v", image, stderr.String())
@@ -72,12 +69,9 @@ func (gcr *GCR) Push(images []string) (pushed []string, err error) {
 			}
 			pushed = append(pushed, image)
 			logCmdOutput(cmdOut)
-
-		} else {
-			log.Println("dryrun: ", strings.Join(cmd.Args, " "))
 		}
-
 	}
+
 	return pushed, err
 }
 
