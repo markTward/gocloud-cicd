@@ -6,7 +6,6 @@ import (
 	"log"
 	"strings"
 
-	"github.com/urfave/cli"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -71,13 +70,13 @@ type Provider struct {
 
 type Registrator interface {
 	IsRegistryValid() error
-	Push(*cli.Context, *Workflow, []string) ([]string, error)
-	Authenticate(*cli.Context, *Workflow) error
+	Push([]string) ([]string, error)
+	Authenticate() error
 	GetRepoURL() string
 }
 
 type Deployer interface {
-	Deploy(*cli.Context, *Workflow) error
+	Deploy(*Workflow) error
 }
 
 func New() *Workflow {

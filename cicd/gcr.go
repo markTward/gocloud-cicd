@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/urfave/cli"
+	"github.com/spf13/viper"
 )
 
 type GCR struct {
@@ -25,7 +25,7 @@ func (r *GCR) GetRepoURL() (repoURL string) {
 	return r.Url
 }
 
-func (r *GCR) Authenticate(ctx *cli.Context, wf *Workflow) (err error) {
+func (r *GCR) Authenticate() (err error) {
 	var stderr bytes.Buffer
 
 	if _, err = os.Stat(r.Keyfile); os.IsNotExist(err) {
@@ -36,26 +36,22 @@ func (r *GCR) Authenticate(ctx *cli.Context, wf *Workflow) (err error) {
 	cmd := exec.Command("gcloud", "auth", "activate-service-account", "--key-file", r.Keyfile)
 	cmd.Stderr = &stderr
 
-	if !IsDryRun(ctx, wf) {
-		log.Println("execute:", strings.Join(cmd.Args, " "))
-
+	log.Println(viper.GetString("cmdMode"), strings.Join(cmd.Args, " "))
+	if !IsDryRun() {
 		if err = cmd.Run(); err != nil {
 			logCmdOutput(stderr.Bytes())
 			err = fmt.Errorf("%v", stderr.String())
 			return err
 		}
-
 		// BUG: gcloud returning successful result over stderr (why?)
 		logCmdOutput(stderr.Bytes())
-	} else {
-		log.Println("dryrun:", strings.Join(cmd.Args, " "))
 	}
 
 	return err
 
 }
 
-func (gcr *GCR) Push(ctx *cli.Context, wf *Workflow, images []string) (pushed []string, err error) {
+func (gcr *GCR) Push(images []string) (pushed []string, err error) {
 	var stderr bytes.Buffer
 	var cmdOut []byte
 
@@ -64,9 +60,8 @@ func (gcr *GCR) Push(ctx *cli.Context, wf *Workflow, images []string) (pushed []
 		cmd := exec.Command("gcloud", "docker", "--", "push", image)
 		cmd.Stderr = &stderr
 
-		if !IsDryRun(ctx, wf) {
-			log.Println("execute: ", strings.Join(cmd.Args, " "))
-
+		log.Println(viper.GetString("cmdMode"), strings.Join(cmd.Args, " "))
+		if !IsDryRun() {
 			if cmdOut, err = cmd.Output(); err != nil {
 				logCmdOutput(stderr.Bytes())
 				err = fmt.Errorf("%v: %v", image, stderr.String())
@@ -74,12 +69,9 @@ func (gcr *GCR) Push(ctx *cli.Context, wf *Workflow, images []string) (pushed []
 			}
 			pushed = append(pushed, image)
 			logCmdOutput(cmdOut)
-
-		} else {
-			log.Println("dryrun: ", strings.Join(cmd.Args, " "))
 		}
-
 	}
+
 	return pushed, err
 }
 

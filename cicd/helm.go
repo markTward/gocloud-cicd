@@ -10,7 +10,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/urfave/cli"
+	"github.com/spf13/viper"
 )
 
 type Helm struct {
@@ -25,21 +25,21 @@ type Helm struct {
 	}
 }
 
-func (h *Helm) Deploy(ctx *cli.Context, wf *Workflow) (err error) {
+func (h *Helm) Deploy(wf *Workflow) (err error) {
 
-	// TODO: release construction should be project specific rule.  config rules?
-	release := ctx.String("service") + "-" + ctx.String("branch")
+	// create helm release name
+	release := viper.GetString("service") + "-" + viper.GetString("branch")
 
 	// helm required flags
-	args := []string{"--install", release, "--namespace", ctx.String("namespace")}
+	args := []string{"--install", release, "--namespace", viper.GetString("namespace")}
 
 	// cli flag conversion
-	if IsDebug(ctx, wf) {
+	if IsDebug() {
 		args = append(args, "--debug")
 	}
 
 	// convert cicd --dryrun arg to helm dialect
-	if IsDryRun(ctx, wf) {
+	if IsDryRun() {
 		args = append(args, "--dry-run")
 	}
 
@@ -62,14 +62,14 @@ func (h *Helm) Deploy(ctx *cli.Context, wf *Workflow) (err error) {
 	}
 
 	// render values file from template
-	err = renderHelmValuesFile(wf, valuesFile, ctx.String("repo"), ctx.String("tag"))
+	err = renderHelmValuesFile(valuesFile, viper.GetString("repo"), viper.GetString("tag"))
 	if err != nil {
 		return fmt.Errorf("renderHelmValuesFile(): %v", err)
 	}
 
 	// join flags and positional args
 	args = append(args, "--values", valuesFile.Name())
-	args = append(args, ctx.String("chart"))
+	args = append(args, viper.GetString("chart"))
 
 	var stderr bytes.Buffer
 	var cmdOut []byte
@@ -77,7 +77,7 @@ func (h *Helm) Deploy(ctx *cli.Context, wf *Workflow) (err error) {
 	// prepend subcommand deploy to args
 	args = append([]string{"upgrade"}, args...)
 	cmd := exec.Command("helm", args...)
-	log.Println("execute: ", strings.Join(cmd.Args, " "))
+	log.Println(viper.GetString("cmdMode"), strings.Join(cmd.Args, " "))
 
 	// execute helm command
 	cmd.Stderr = &stderr
@@ -91,7 +91,7 @@ func (h *Helm) Deploy(ctx *cli.Context, wf *Workflow) (err error) {
 	return err
 }
 
-func renderHelmValuesFile(wf *Workflow, valuesFile *os.File, repo string, tag string) error {
+func renderHelmValuesFile(valuesFile *os.File, repo string, tag string) error {
 	type Values struct {
 		Repo, Tag, ServiceType string
 	}
@@ -102,7 +102,7 @@ func renderHelmValuesFile(wf *Workflow, valuesFile *os.File, repo string, tag st
 	// initialize the template
 	var t *template.Template
 	var err error
-	if t, err = template.ParseFiles(wf.Provider.CD.Helm.Values.Template); err != nil {
+	if t, err = template.ParseFiles(viper.GetString("template")); err != nil {
 		return err
 	}
 
@@ -117,7 +117,7 @@ func renderHelmValuesFile(wf *Workflow, valuesFile *os.File, repo string, tag st
 		return err
 	}
 
-	log.Println(string(yaml))
+	LogDebug(fmt.Sprintf("helm runtime values: \n%v", string(yaml)))
 
 	return err
 }

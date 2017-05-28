@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/urfave/cli"
+	"github.com/spf13/viper"
 )
 
 type Docker struct {
@@ -20,7 +20,7 @@ type Docker struct {
 	Url         string
 }
 
-func (r *Docker) Authenticate(ctx *cli.Context, wf *Workflow) (err error) {
+func (r *Docker) Authenticate() (err error) {
 	var stderr bytes.Buffer
 	var cmdOut []byte
 
@@ -37,17 +37,14 @@ func (r *Docker) Authenticate(ctx *cli.Context, wf *Workflow) (err error) {
 	}
 
 	cmd := exec.Command("docker", "login", "-u", dockerUser, "-p", dockerPass)
-	if !IsDryRun(ctx, wf) {
+	log.Println(viper.GetString("cmdMode"), strings.Join(cmd.Args[:4], " "), " -p ********")
+	if !IsDryRun() {
 		cmd.Stderr = &stderr
-		log.Println("execute:", strings.Join(cmd.Args[:4], " "), " -p ********")
-
 		if cmdOut, err = cmd.Output(); err != nil {
 			err = fmt.Errorf("%v", stderr.String())
 			return err
 		}
 		logCmdOutput(cmdOut)
-	} else {
-		log.Println("dryrun:", strings.Join(cmd.Args[:4], " "), " -p ********")
 	}
 
 	return err
@@ -60,7 +57,7 @@ func (r *Docker) IsRegistryValid() (err error) {
 	return err
 }
 
-func (docker *Docker) Push(ctx *cli.Context, wf *Workflow, images []string) (pushed []string, err error) {
+func (docker *Docker) Push(images []string) (pushed []string, err error) {
 	var stderr bytes.Buffer
 	var cmdOut []byte
 
@@ -69,9 +66,9 @@ func (docker *Docker) Push(ctx *cli.Context, wf *Workflow, images []string) (pus
 		cmd := exec.Command("docker", "push", image)
 		cmd.Stderr = &stderr
 
-		if !IsDryRun(ctx, wf) {
-			log.Println("execute:", strings.Join(cmd.Args, " "))
+		log.Println(viper.GetString("cmdMode"), strings.Join(cmd.Args, " "))
 
+		if !IsDryRun() {
 			if cmdOut, err = cmd.Output(); err != nil {
 				err = fmt.Errorf("%v: %v", image, stderr.String())
 				break
@@ -80,10 +77,9 @@ func (docker *Docker) Push(ctx *cli.Context, wf *Workflow, images []string) (pus
 			logCmdOutput(cmdOut)
 			pushed = append(pushed, image)
 
-		} else {
-			log.Println("dryrun:", strings.Join(cmd.Args, " "))
 		}
 	}
+
 	return pushed, err
 }
 
