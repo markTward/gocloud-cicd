@@ -43,7 +43,7 @@ func init() {
 
 }
 
-func deploy(ctx *cobra.Command, args []string) error {
+func deploy(ccmd *cobra.Command, args []string) error {
 
 	// initialize active Registry indicated by config and assert as Registrator
 	var activeRegistry interface{}
@@ -54,7 +54,7 @@ func deploy(ctx *cobra.Command, args []string) error {
 	ar := activeRegistry.(cicd.Registrator)
 
 	// validate args and apply defaults
-	if err = validateDeployArgs(ctx, wf, ar); err != nil {
+	if err = validateDeployArgs(wf, ar); err != nil {
 		return err
 	}
 
@@ -70,7 +70,7 @@ func deploy(ctx *cobra.Command, args []string) error {
 	return err
 }
 
-func validateDeployArgs(ctx *cobra.Command, wf *cicd.Workflow, ar cicd.Registrator) (err error) {
+func validateDeployArgs(wf *cicd.Workflow, ar cicd.Registrator) (err error) {
 
 	if buildTag == "" {
 		return fmt.Errorf("%v", "build tag a required value")
