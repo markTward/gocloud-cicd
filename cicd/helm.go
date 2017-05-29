@@ -71,6 +71,7 @@ func (h *Helm) Deploy(wf *Workflow) (err error) {
 	args = append(args, "--values", valuesFile.Name())
 	args = append(args, viper.GetString("chart"))
 
+	// init command vars
 	var stderr bytes.Buffer
 	var cmdOut []byte
 

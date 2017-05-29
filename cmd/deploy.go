@@ -70,6 +70,7 @@ func deploy(ccmd *cobra.Command, args []string) error {
 	return err
 }
 
+// TODO: args are helm specific.  add as method for CD provider.
 func validateDeployArgs(wf *cicd.Workflow, ar cicd.Registrator) (err error) {
 
 	if buildTag == "" {

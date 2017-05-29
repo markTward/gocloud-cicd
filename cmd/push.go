@@ -79,6 +79,7 @@ func push(ccmd *cobra.Command, args []string) (err error) {
 	return err
 }
 
+// TODO: the case keys are travis specific.  add as method for CI provider
 func makeTagList(repoURL string) (images []string) {
 
 	// tag additional images based on build event type
@@ -120,6 +121,7 @@ func tagImages(images []string) (err error) {
 	return err
 }
 
+// TODO: the event case keys are travis specific.  add as method for CI provider
 func validatePushArgs() (err error) {
 
 	switch {

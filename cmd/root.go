@@ -62,24 +62,25 @@ func initConfig() {
 		log.Fatalf("unable to read config file: %v", err)
 	}
 
-	// override default config file settings
-	viper.SetDefault("isDryRun", wf.Config.Dryrun)
-	if RootCmd.PersistentFlags().Lookup("dryrun").Changed {
-		viper.BindPFlag("isDryRun", RootCmd.PersistentFlags().Lookup("dryrun"))
-	}
-
+	// override default config file settings when flag provided
 	viper.SetDefault("isDebug", wf.Config.Debug)
 	if RootCmd.PersistentFlags().Lookup("debug").Changed {
 		viper.BindPFlag("isDebug", RootCmd.PersistentFlags().Lookup("debug"))
 	}
 
-	// broadcast global settigns
+	viper.SetDefault("isDryRun", wf.Config.Dryrun)
+	if RootCmd.PersistentFlags().Lookup("dryrun").Changed {
+		viper.BindPFlag("isDryRun", RootCmd.PersistentFlags().Lookup("dryrun"))
+	}
+
+	// set cmdMode as logging prefix for action-oriented commands
 	viper.SetDefault("cmdMode", "execute:")
 	if viper.GetBool("isDryRun") {
 		viper.Set("cmdMode", "dryrun:")
 		log.Println("operating in dryrun mode")
 	}
 
+	// broadcast global settigns
 	if viper.GetBool("isDebug") {
 		log.Println("operating in debug mode")
 	}
