@@ -9,6 +9,7 @@ import (
 
 	"github.com/markTward/gocloud-cicd/cicd"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var event, baseImage, pr string
@@ -78,6 +79,7 @@ func push(ccmd *cobra.Command, args []string) (err error) {
 	return err
 }
 
+// TODO: the case keys are travis specific.  add as method for CI provider
 func makeTagList(repoURL string) (images []string) {
 
 	// tag additional images based on build event type
@@ -106,20 +108,20 @@ func tagImages(images []string) (err error) {
 		cmd := exec.Command("docker", "tag", baseImage, image)
 		cmd.Stderr = &stderr
 
+		log.Println(viper.GetString("cmdMode"), strings.Join(cmd.Args, " "))
+
 		if !cicd.IsDryRun() {
-			log.Printf("docker tag from %v to %v", baseImage, image)
 			if err = cmd.Run(); err != nil {
 				err = fmt.Errorf("%v", stderr.String())
 				break
 			}
-		} else {
-			log.Println("dryrun:", strings.Join(cmd.Args, " "))
 		}
 	}
 
 	return err
 }
 
+// TODO: the event case keys are travis specific.  add as method for CI provider
 func validatePushArgs() (err error) {
 
 	switch {

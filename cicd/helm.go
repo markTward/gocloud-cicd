@@ -71,12 +71,14 @@ func (h *Helm) Deploy(wf *Workflow) (err error) {
 	args = append(args, "--values", valuesFile.Name())
 	args = append(args, viper.GetString("chart"))
 
+	// init command vars
 	var stderr bytes.Buffer
 	var cmdOut []byte
 
 	// prepend subcommand deploy to args
 	args = append([]string{"upgrade"}, args...)
 	cmd := exec.Command("helm", args...)
+
 	log.Println(viper.GetString("cmdMode"), strings.Join(cmd.Args, " "))
 
 	// execute helm command

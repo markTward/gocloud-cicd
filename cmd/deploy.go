@@ -70,6 +70,7 @@ func deploy(ccmd *cobra.Command, args []string) error {
 	return err
 }
 
+// TODO: args are helm specific.  add as method for CD provider.
 func validateDeployArgs(wf *cicd.Workflow, ar cicd.Registrator) (err error) {
 
 	if buildTag == "" {
@@ -104,7 +105,7 @@ func validateDeployArgs(wf *cicd.Workflow, ar cicd.Registrator) (err error) {
 
 	if containerRepo == "" {
 		if cr := ar.GetRepoURL(); cr == "" {
-			return fmt.Errorf("%v\n", "repoitory url required when not defined in cicd.yaml")
+			return fmt.Errorf("%v", "repoitory url required when not defined in cicd.yaml")
 		} else {
 			containerRepo = cr
 		}
