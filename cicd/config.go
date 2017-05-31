@@ -44,6 +44,8 @@ type App struct {
 	Repo string
 }
 
+type reqs map[string][]interface{}
+
 type Provider struct {
 	CICD struct {
 		Repo   string

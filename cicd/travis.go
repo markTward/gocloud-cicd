@@ -1,6 +1,7 @@
 package cicd
 
 type Travis struct {
-	Name string
-	Plan string
+	Name         string
+	OS           string
+	Requirements reqs
 }

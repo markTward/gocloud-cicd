@@ -14,12 +14,13 @@ import (
 )
 
 type Helm struct {
-	Name      string
-	Version   string
-	Release   string
-	Namespace string
-	Chartpath string
-	Values    struct {
+	Name         string
+	Version      string
+	Requirements reqs
+	Release      string
+	Namespace    string
+	Chartpath    string
+	Values       struct {
 		Template string
 		Output   string
 	}
