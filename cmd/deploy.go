@@ -66,7 +66,7 @@ func deploy(ccmd *cobra.Command, args []string) error {
 	ad := activeCDProvider.(cicd.Deployer)
 
 	// use k8s context associated with platform
-	if err = cicd.UseContext(); err != nil {
+	if err = wf.UseContext(); err != nil {
 		return err
 	}
 
