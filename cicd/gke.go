@@ -6,4 +6,5 @@ type GKE struct {
 	Cluster     string
 	Computezone string
 	Keyfile     string
+	Context     string
 }

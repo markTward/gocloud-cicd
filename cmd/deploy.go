@@ -58,12 +58,17 @@ func deploy(ccmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// get active CD provider indicated by config and assert as Deployer
+	//get active CD provider indicated by config and assert as Deployer
 	var activeCDProvider interface{}
 	if activeCDProvider, err = wf.GetActiveCDProvider(); err != nil {
 		return err
 	}
 	ad := activeCDProvider.(cicd.Deployer)
+
+	// use k8s context associated with platform
+	if err = wf.UseContext(); err != nil {
+		return err
+	}
 
 	// deploy using active CD provider
 	err = ad.Deploy(wf)
