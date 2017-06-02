@@ -1,10 +1,14 @@
 package cicd
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os/exec"
 	"strings"
+
+	"github.com/spf13/viper"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -58,6 +62,7 @@ type Provider struct {
 
 	Platform struct {
 		GKE
+		MiniKube
 	}
 
 	CD struct {
@@ -122,6 +127,38 @@ func (wf *Workflow) GetActiveCDProvider() (activeCD interface{}, err error) {
 		log.Println(err)
 	}
 	return activeCD, err
+}
+
+func (wf *Workflow) UseContext() (err error) {
+	var stderr bytes.Buffer
+	var cmdOut []byte
+	var ctx string
+
+	switch wf.Config.Provider.Platform.ID {
+	case "gke":
+		ctx = wf.Provider.Platform.GKE.Context
+	case "minikube":
+		ctx = wf.Provider.Platform.MiniKube.Context
+	default:
+		LogError(fmt.Errorf("unknown platform provider: <%v>", wf.Config.Provider.Platform.ID))
+	}
+
+	cmd := exec.Command("kubectl", "config", "use-context", ctx)
+	cmd.Stderr = &stderr
+
+	log.Println(viper.GetString("cmdMode"), strings.Join(cmd.Args, " "))
+
+	if !IsDryRun() {
+		cmd.Stderr = &stderr
+		if cmdOut, err = cmd.Output(); err != nil {
+			err = fmt.Errorf("%v", stderr.String())
+			return err
+		}
+		logCmdOutput(cmdOut)
+	}
+
+	return err
+
 }
 
 func logCmdOutput(cmdOut []byte) {

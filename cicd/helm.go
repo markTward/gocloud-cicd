@@ -23,6 +23,9 @@ type Helm struct {
 	Values       struct {
 		Template string
 		Output   string
+		Overrides struct {
+			Platform map[string]map[string]string
+		}
 	}
 }
 
@@ -62,8 +65,19 @@ func (h *Helm) Deploy(wf *Workflow) (err error) {
 		defer valuesFile.Close()
 	}
 
-	// render values file from template
-	err = renderHelmValuesFile(valuesFile, viper.GetString("repo"), viper.GetString("tag"))
+	// TODO: currently only one category (platform) and one value (service type) are enabled for overrider; extend to more categories and values
+	platform := wf.Config.Provider.Platform.ID
+	overrides := wf.Provider.CD.Helm.Values.Overrides.Platform
+	serviceType := overrides[platform]["servicetype"]
+
+	// render values file using template
+	err = renderHelmValuesFile(
+		valuesFile,
+		viper.GetString("repo"),
+		viper.GetString("tag"),
+		serviceType,
+	)
+
 	if err != nil {
 		return fmt.Errorf("renderHelmValuesFile(): %v", err)
 	}
@@ -94,13 +108,14 @@ func (h *Helm) Deploy(wf *Workflow) (err error) {
 	return err
 }
 
-func renderHelmValuesFile(valuesFile *os.File, repo string, tag string) error {
+func renderHelmValuesFile(valuesFile *os.File, repo string, tag string, serviceType string) error {
+
 	type Values struct {
 		Repo, Tag, ServiceType string
 	}
 
 	// Prepare some data to insert into the template.
-	var values = Values{Repo: repo, Tag: tag}
+	var values = Values{Repo: repo, Tag: tag, ServiceType: serviceType}
 
 	// initialize the template
 	var t *template.Template

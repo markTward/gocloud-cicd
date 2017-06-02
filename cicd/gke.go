@@ -7,4 +7,5 @@ type GKE struct {
 	Computezone  string
 	Keyfile      string
 	Requirements reqs
+	Context     string
 }
