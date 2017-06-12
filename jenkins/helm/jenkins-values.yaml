@@ -1,0 +1,30 @@
+Master:
+  InstallPlugins:
+      - blueocean-git-pipeline:1.0.1
+      - credentials-binding:1.11
+      - git:3.3.0
+      - ghprb:1.36.2
+      - kubernetes:0.11
+      - pipeline-github-lib:1.0
+      - pipeline-utility-steps:1.3.0
+      - workflow-aggregator:2.5
+      - blueocean:1.0.1
+
+#  ScriptApproval:
+#    - "method groovy.json.JsonSlurperClassic parseText java.lang.String"
+#    - "new groovy.json.JsonSlurperClassic"
+#    - "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods leftShift java.util.Map java.util.Map"
+#    - "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods split java.lang.String"
+
+#  Ingress:
+#    Annotations:
+#      kubernetes.io/ingress.class: nginx
+#      kubernetes.io/tls-acme: "true"
+#
+#    TLS:
+#      - secretName: jenkins.cluster.local
+#        hosts:
+#          - jenkins.cluster.local
+
+#Agent:
+#  Enabled: true

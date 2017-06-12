@@ -1,0 +1,5 @@
+Master:
+  AdminPassword: bemyguest
+#  HostName: jenkins.cluster.local
+#  ServiceType: NodePort
+#  NodePort: 30303
